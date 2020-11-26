@@ -1,0 +1,252 @@
+     1                                  %INCLUDE "winAPI.inc"		;;Declare external procedure {winapi}
+     1                              <1> extern ExitProcess
+     2                              <1> extern AllocConsole 
+     3                              <1> extern FreeConsole 
+     4                              <1> extern SetConsoleTitleA 
+     5                              <1> extern Sleep 
+     6                              <1> extern GetStdHandle
+     7                              <1> extern ReadFile
+     8                              <1> extern WriteFile
+     9                              <1> EXTERN MessageBoxA	
+    10                              <1> 
+    11                              <1> import ExitProcess		kernel32.dll
+    12                              <1> import AllocConsole		kernel32.dll 
+    13                              <1> import FreeConsole		kernel32.dll 
+    14                              <1> import SetConsoleTitleA	kernel32.dll 
+    15                              <1> import Sleep 			kernel32.dll
+    16                              <1> import GetStdHandle 	kernel32.dll
+    17                              <1> import ReadFile			kernel32.dll
+    18                              <1> import WriteFile		kernel32.dll
+    19                              <1> IMPORT MessageBoxA 		user32.dll
+     2                                  %INCLUDE "Console1.mac"		;;Macro definition
+     1                              <1> %macro NewConsole 3
+     2                              <1> 	
+     3                              <1> 	call [AllocConsole] 
+     4                              <1> 
+     5                              <1> 	push dword %1 
+     6                              <1> 	call [SetConsoleTitleA] 
+     7                              <1> 
+     8                              <1> 	push dword -11 				
+     9                              <1> 	call [GetStdHandle] 
+    10                              <1> 	mov dword [%2], eax 
+    11                              <1> 
+    12                              <1> 	push dword -10				 
+    13                              <1> 	call [GetStdHandle] 
+    14                              <1> 	mov dword [%3], eax 
+    15                              <1> 
+    16                              <1> %endmacro
+    17                              <1> 
+    18                              <1> %macro QuitConsole 0
+    19                              <1> 	call [FreeConsole] 
+    20                              <1> 	xor eax, eax 
+    21                              <1> 	push eax 
+    22                              <1> 	call [ExitProcess]
+    23                              <1> %endmacro
+    24                              <1> 
+    25                              <1> %macro Wait 1
+    26                              <1> 	push dword %1*1000 		;; delay %1/1000 second 
+    27                              <1> 	call [Sleep] 
+    28                              <1> %endmacro
+    29                              <1> 
+    30                              <1> %macro DisplayText 4
+    31                              <1> 	push dword 0 				
+    32                              <1> 	push dword %4				
+    33                              <1> 	push dword [%3] 			
+    34                              <1> 	push dword %2				
+    35                              <1> 	push dword [%1] 			
+    36                              <1> 	call [WriteFile] 
+    37                              <1> %endmacro
+    38                              <1> 
+    39                              <1> %macro GetText 4
+    40                              <1> 	push dword 0 		
+    41                              <1> 	push dword %4 		
+    42                              <1> 	push dword [%3] 	
+    43                              <1> 	push dword %2 		
+    44                              <1> 	push dword [%1] 	
+    45                              <1> 	call [ReadFile] 			
+    46                              <1> %endmacro
+     3                                  
+     4                                  SEGMENT .DATA use32
+     5 00000000 53756D00                Title   	db "Sum",0 
+     6                                  
+     7 00000004 0D0A0D0A496E707574-     msg1 		db 13,10,13,10,"Input number (sum < 65536) (just press enter to sum, ctrl+c to exit)",13,10
+     7 0000000D 206E756D6265722028-
+     7 00000016 73756D203C20363535-
+     7 0000001F 33362920286A757374-
+     7 00000028 20707265737320656E-
+     7 00000031 74657220746F207375-
+     7 0000003A 6D2C206374726C2B63-
+     7 00000043 20746F206578697429-
+     7 0000004C 0D0A               
+     8 0000004E 4A000000                msg1_len 	dd $-msg1		
+     9                                  
+    10 00000052 53756D2000              mbtitle 	db 'Sum ',0
+    11 00000057 5468652073756D3A20      mbtext		db 'The sum: '
+    12                                  
+    13 00000060 <res 000000FF>          buff		resb 255
+    14 0000015F FF000000                buff_len	dd 255
+    15                                  
+    16 00000163 202020202020000000-     strhasil	dd '      ',0
+    16 0000016C 000000             
+    17 0000016F 06                      str_len		db 6   
+    18                                  
+    19                                  
+    20                                  SEGMENT .BSS  use32
+    21 00000000 <res 00000004>          hStdOut		resd 1 
+    22 00000004 <res 00000004>          hStdIn		resd 1 
+    23 00000008 <res 00000004>          nBytes		resd 1
+    24 0000000C <res 00000004>          iBytes		resd 1
+    25 00000010 <res 00000004>          rBytes		resd 1
+    26 00000014 <res 00000004>          num			resd 1
+    27                                  
+    28                                  SEGMENT .CODE use32
+    29                                  ..start:
+    30                                  
+    31                                  NewConsole 	Title, hStdOut, hStdIn
+    31                              <1> 
+    31 00000000 FF15[00000000]      <1>  call [AllocConsole]
+    31                              <1> 
+    31 00000006 68[00000000]        <1>  push dword %1
+    31 0000000B FF15[00000000]      <1>  call [SetConsoleTitleA]
+    31                              <1> 
+    31 00000011 6AF5                <1>  push dword -11
+    31 00000013 FF15[00000000]      <1>  call [GetStdHandle]
+    31 00000019 A3[00000000]        <1>  mov dword [%2], eax
+    31                              <1> 
+    31 0000001E 6AF6                <1>  push dword -10
+    31 00000020 FF15[00000000]      <1>  call [GetStdHandle]
+    31 00000026 A3[04000000]        <1>  mov dword [%3], eax
+    31                              <1> 
+    32                                  
+    33                                  Again:
+    34                                  
+    35                                  
+    36                                  DisplayText	hStdOut, msg1, msg1_len, nBytes
+    36 0000002B 6A00                <1>  push dword 0
+    36 0000002D 68[08000000]        <1>  push dword %4
+    36 00000032 FF35[4E000000]      <1>  push dword [%3]
+    36 00000038 68[04000000]        <1>  push dword %2
+    36 0000003D FF35[00000000]      <1>  push dword [%1]
+    36 00000043 FF15[00000000]      <1>  call [WriteFile]
+    37                                  
+    38                                  again1:
+    39 00000049 B800000000              mov eax,0
+    40 0000004E A3[14000000]            mov [num],eax
+    41                                  
+    42                                  GetText		hStdIn, buff, buff_len, iBytes
+    42 00000053 6A00                <1>  push dword 0
+    42 00000055 68[0C000000]        <1>  push dword %4
+    42 0000005A FF35[5F010000]      <1>  push dword [%3]
+    42 00000060 68[60000000]        <1>  push dword %2
+    42 00000065 FF35[04000000]      <1>  push dword [%1]
+    42 0000006B FF15[00000000]      <1>  call [ReadFile]
+    43                                  
+    44 00000071 833D[0C000000]02        CMP dword [iBytes],2    ;; if just Enter (2 char) then Exit
+    45 00000078 7407                    JE  Exitloop
+    46                                  
+    47 0000007A E821000000              CALL Str2Numeric
+    48 0000007F EBC8                    jmp again1
+    49                                  
+    50                                  Exitloop:
+    51 00000081 E84E000000              CALL Numeric2StrT
+    52                                  
+    53 00000086 E86E000000              CALL mbox
+    54                                  
+    55 0000008B 83F804                  cmp eax,4
+    56 0000008E 749B                    JE Again
+    57                                  QuitConsole
+    57 00000090 FF15[00000000]      <1>  call [FreeConsole]
+    57 00000096 31C0                <1>  xor eax, eax
+    57 00000098 50                  <1>  push eax
+    57 00000099 FF15[00000000]      <1>  call [ExitProcess]
+    58                                  
+    59 0000009F C3                      RET
+    60                                  
+    61                                  ; CONVERT STRING (buff) TO Numeric (rBytes)
+    62                                  ;-------------------------------------------------------------------------------------
+    63                                  Str2Numeric:
+    64 000000A0 8B0D[0C000000]          	mov ecx, [iBytes]
+    65 000000A6 BE[60000000]            	mov esi, dword buff
+    66 000000AB 83E902                  	sub ecx, 2
+    67                                  	
+    68                                  	loop:
+    69 000000AE 0FB606                  		movzx eax, byte[esi]
+    70 000000B1 83E830                  		sub eax, '0'
+    71 000000B4 89CB                    		mov ebx, ecx
+    72 000000B6 49                      		dec ecx
+    73 000000B7 83F900                  		cmp ecx,0
+    74 000000BA 7410                    		je fin
+    75                                  		mult:
+    76 000000BC 6BC00A                  			imul eax,10
+    77 000000BF E2FB                    			loop mult
+    78 000000C1 89D9                    		mov ecx, ebx
+    79 000000C3 0105[14000000]          		add [num], eax
+    80 000000C9 46                      		inc esi
+    81 000000CA E2E2                    		loop loop
+    82                                  		
+    83                                  	fin:
+    84 000000CC 0105[14000000]          		add [num],eax
+    85 000000D2 C3                      ret
+    86                                  
+    87                                  ;other version
+    88                                  ;Str2Numeric:
+    89                                  ;	xor eax,eax
+    90                                  ;	mov esi, 10
+    91                                  ;	mov ebx, buff
+    92                                  ;	mov ecx, [iBytes]
+    93                                  ;	sub ecx, 2
+    94                                  ;	xor edx, edx
+    95                                  ;	
+    96                                  ;	loopnum:
+    97                                  ;		mul esi
+    98                                  ;		mov dl, byte[ebx]
+    99                                  ;		sub dl, 0x30
+   100                                  ;		add eax, edx
+   101                                  ;		inc ebx
+   102                                  ;		loop loopnum
+   103                                  ;		
+   104                                  ;	mov [num], eax
+   105                                  ;ret
+   106                                  
+   107 000000D3 C3                      ret
+   108                                  ; CONVERT Numeric (iBytes) TO STRING (strhasil) 
+   109                                  ;-------------------------------------------------------------------------------------
+   110                                  Numeric2StrT: 
+   111 000000D4 BB[63010000]            	mov ebx, strhasil
+   112 000000D9 A1[14000000]            	mov eax, [num]
+   113 000000DE 66BE0A00                	mov si, 10
+   114                                  
+   115                                  loop1:				
+   116 000000E2 43                      	inc ebx				;; ebx digunakan sebagai pointer ke strhasil
+   117 000000E3 803B00                  	cmp byte[ebx],0		;; diposisikan pada akhir string strhasil 
+   118 000000E6 75FA                    	jne loop1		
+   119                                  	
+   120 000000E8 4B                      	dec ebx
+   121                                  
+   122                                  loop2:				
+   123 000000E9 31D2                    	xor edx, edx		;; edx di-nolkan untuk menampung sisa bagi
+   124 000000EB 66F7F6                  	div si				;; dilakukan pembagian 10 berulang
+   125 000000EE 80C230                  	add dl, '0'        	;; sisa bagi pada edx (dl) di ubah ke character
+   126 000000F1 8813                    	mov [ebx], dl		;; simpan ke strhasil dari belakang ke depan
+   127 000000F3 4B                      	dec ebx				;; majukan pointer
+   128 000000F4 09C0                    	or  eax,eax			;; test apakah yang dibagi sudah nol
+   129 000000F6 75F1                    	jnz loop2 			;; selesai perulangan jika yang dibagi sdh nol   
+   130                                  
+   131 000000F8 C3                      ret
+   132                                  
+   133                                  ; Display on MessageBox 
+   134                                  ;-------------------------------------------------------------------------------------
+   135                                  mbox:
+   136 000000F9 B9[63010000]            	mov ecx, strhasil
+   137 000000FE 81C1[6F010000]          	add ecx, str_len			; mbtext + buff + text2 (concatenate 3 string)
+   138 00000104 89CE                    	mov esi, ecx
+   139                                  	
+   140 00000106 6A05                    	push dword 5			; Button OK | icon exclamation
+   141 00000108 68[52000000]            	push dword mbtitle		
+   142 0000010D 68[57000000]            	push dword mbtext  	
+   143 00000112 6A00                    	push dword 0			
+   144                                  	
+   145 00000114 FF15[00000000]          	call [MessageBoxA]
+   146                                  
+   147 0000011A C3                      ret
+   148                                  

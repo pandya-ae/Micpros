@@ -1,0 +1,1306 @@
+     1                                  %Include "Calculator.inc"
+     1                              <1> %macro macro_import 2
+     2                              <1> 		import %1 %2
+     3                              <1> 		extern %1
+     4                              <1> %endmacro
+     5                              <1> 
+     6                              <1> ;; Import the Win32 API functions. 
+     7                              <1> macro_import GetModuleHandleA, kernel32.dll 
+     7                              <2>  import %1 %2
+     7                              <2>  extern %1
+     8                              <1> macro_import GetCommandLineA, kernel32.dll 
+     8                              <2>  import %1 %2
+     8                              <2>  extern %1
+     9                              <1> macro_import ExitProcess, kernel32.dll 
+     9                              <2>  import %1 %2
+     9                              <2>  extern %1
+    10                              <1> macro_import MessageBoxA, user32.dll 
+    10                              <2>  import %1 %2
+    10                              <2>  extern %1
+    11                              <1> macro_import LoadIconA, user32.dll 
+    11                              <2>  import %1 %2
+    11                              <2>  extern %1
+    12                              <1> macro_import LoadCursorA, user32.dll 
+    12                              <2>  import %1 %2
+    12                              <2>  extern %1
+    13                              <1> macro_import RegisterClassExA, user32.dll 
+    13                              <2>  import %1 %2
+    13                              <2>  extern %1
+    14                              <1> macro_import CreateWindowExA, user32.dll 
+    14                              <2>  import %1 %2
+    14                              <2>  extern %1
+    15                              <1> macro_import ShowWindow, user32.dll 
+    15                              <2>  import %1 %2
+    15                              <2>  extern %1
+    16                              <1> macro_import UpdateWindow, user32.dll 
+    16                              <2>  import %1 %2
+    16                              <2>  extern %1
+    17                              <1> macro_import GetMessageA, user32.dll 
+    17                              <2>  import %1 %2
+    17                              <2>  extern %1
+    18                              <1> macro_import TranslateMessage, user32.dll 
+    18                              <2>  import %1 %2
+    18                              <2>  extern %1
+    19                              <1> macro_import DispatchMessageA, user32.dll 
+    19                              <2>  import %1 %2
+    19                              <2>  extern %1
+    20                              <1> macro_import PostQuitMessage, user32.dll 
+    20                              <2>  import %1 %2
+    20                              <2>  extern %1
+    21                              <1> macro_import DefWindowProcA, user32.dll 
+    21                              <2>  import %1 %2
+    21                              <2>  extern %1
+    22                              <1> macro_import SetFocus, user32.dll
+    22                              <2>  import %1 %2
+    22                              <2>  extern %1
+    23                              <1> macro_import GetWindowTextA, user32.dll
+    23                              <2>  import %1 %2
+    23                              <2>  extern %1
+    24                              <1> macro_import SetWindowTextA, user32.dll
+    24                              <2>  import %1 %2
+    24                              <2>  extern %1
+    25                              <1> macro_import SendMessageA, user32.dll
+    25                              <2>  import %1 %2
+    25                              <2>  extern %1
+    26                              <1> macro_import BeginPaint, user32.dll
+    26                              <2>  import %1 %2
+    26                              <2>  extern %1
+    27                              <1> macro_import DrawTextA, user32.dll
+    27                              <2>  import %1 %2
+    27                              <2>  extern %1
+    28                              <1> macro_import EndPaint, user32.dll
+    28                              <2>  import %1 %2
+    28                              <2>  extern %1
+    29                              <1> 
+    30                              <1> %macro GetModuleHandle 0
+    31                              <1> 	push dword 0 
+    32                              <1> 	call [GetModuleHandleA] 
+    33                              <1> 	mov dword [hInstance], eax 
+    34                              <1> %endmacro
+    35                              <1> 
+    36                              <1> %macro GetCommandLine 0
+    37                              <1> 	call [GetCommandLineA] 
+    38                              <1> 	mov dword [CommandLine], eax 
+    39                              <1> %endmacro
+    40                              <1> 
+    41                              <1> %macro RegisterClass 0
+    42                              <1>     							;; We need to fill out the WNDCLASSEX structure, now. 
+    43                              <1>     lea ebx, [ebp-48]           ;; We load EBX with the address of our WNDCLASSEX structure. 
+    44                              <1>     mov dword [ebx+00], 48      ;; Offset 00 is the size of the structure. 
+    45                              <1>     mov dword [ebx+04], 3       ;; Offset 04 is the style for the window. 3 is equal to CS_HREDRAW | CS_VREDRAW 
+    46                              <1>     mov dword [ebx+08], WindowProcedure        ;; Offset 08 is the address of our window procedure. 
+    47                              <1>     mov dword [ebx+12], 0       ;; I'm not sure what offset 12 and offset 16 are for. 
+    48                              <1>     mov dword [ebx+16], 0       ;; But I do know that they're supposed to be NULL, at least for now. 
+    49                              <1>     
+    50                              <1>     mov eax, dword [ebp+8]      ;; We load the hInstance value. 
+    51                              <1>     mov dword [ebx+20], eax     ;; Offset 20 is the hInstance value. 
+    52                              <1>     
+    53                              <1>     mov dword [ebx+32], 5 	  	;; Offset 32 is the handle to the background brush. We set that to COLOR_WINDOW
+    54                              <1>     mov dword [ebx+36], 0       ;; Offset 36 is the menu name, what we set to NULL, because we don't have a menu. 
+    55                              <1>     mov dword [ebx+40], ClassName ;; Offset 40 is the class name for our window class. 
+    56                              <1> 								 
+    57                              <1>     push dword 32512 			;; LoadIcon(0, IDI_APPLICATION) where IDI_APPLICATION is equal to 32512.
+    58                              <1>     push dword 0 
+    59                              <1>     call [LoadIconA] 
+    60                              <1> 								;; All Win32 API functions preserve the EBP, EBX, ESI, and EDI registers, so it's 
+    61                              <1> 								;; okay if we use EBX to store the address of the WNDCLASSEX structure, for now. 
+    62                              <1>     
+    63                              <1>     mov dword [ebx+24], eax     ;; Offset 24 is the handle to the icon for our window. 
+    64                              <1>     mov dword [ebx+44], eax     ;; Offset 44 is the handle to the small icon for our window. 
+    65                              <1> 								 
+    66                              <1>     push dword 32512 			;; LoadCursor(0, IDC_ARROW) where IDC_ARROW is equal to 32512.
+    67                              <1>     push dword 0 
+    68                              <1>     call [LoadCursorA] 
+    69                              <1>     
+    70                              <1>     mov dword [ebx+28], eax     ;; Offset 28 is the handle to the cursor for our window. 
+    71                              <1>     
+    72                              <1> 								;; Now we register our window class with Windows, so that we can use the class name 
+    73                              <1> 								;; for our window, when we make that. 
+    74                              <1> 								;; Since EBX already has the address of our WNDCLASSEX structure, we can just pussh 
+    75                              <1> 								;; EBX, so we don't have to reload the address of that structure. 
+    76                              <1>     push ebx 
+    77                              <1>     call [RegisterClassExA] 
+    78                              <1> 
+    79                              <1> %endmacro
+    80                              <1> 
+    81                              <1>     
+    82                              <1> %macro CreateWindow 6
+    83                              <1> 								;; CreateWindowEx(WS_EX_CLIENTEDGE, ClassName, window title, WS_OVERLAPPEDWINDOW,
+    84                              <1> 								;;                x, y, width, height, handle to parent window, 
+    85                              <1> 								;;                handle to menu, hInstance, NULL); 
+    86                              <1>     push dword 0 
+    87                              <1>     push dword [ebp+8] 
+    88                              <1>     push dword 0 
+    89                              <1>     push dword 0 
+    90                              <1>     push dword %6            	;; heigth 
+    91                              <1>     push dword %5              	;; width 
+    92                              <1>     push dword %4        		;; y
+    93                              <1>     push dword %3				;; x
+    94                              <1>     push dword 0x00 | 0xC00000 | 0x80000  | 0x20000 | 0x10000 | 0x40000    
+    95                              <1>                                 ;; WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME  
+    96                              <1>     push dword %2				;; ApplicationName 
+    97                              <1>     push dword %1				;; ClassName 
+    98                              <1>     push dword 0000200h 		;; WS_EX_CLIENTEDGE
+    99                              <1>     call [CreateWindowExA] 
+   100                              <1> 								;; Store the result (which should be a handle to our window) in [ebp-76]. 
+   101                              <1>     mov dword [ebp-76], eax
+   102                              <1> 
+   103                              <1> 	mov dword [hWind], eax		;; Store handle window to hWind
+   104                              <1> 								;; Check if EAX is zero. If so, jump to the error-handling routine. 
+   105                              <1>     sub eax, 0                  ;; The only difference between SUB and CMP is that CMP doesn't store the result in the first operand. 
+   106                              <1>                                 ;; Here we're subtracting 0 from EAX, which won't change EAX, so it doesn't matter if we use SUB. 
+   107                              <1>     jz .new_window_failed 
+   108                              <1>     							;; Now we need to show the window and update the window. 
+   109                              <1>     push dword [ebp+20] 		;; ShowWindow([ebp-76], [ebp+20])
+   110                              <1>     push dword [ebp-76] 
+   111                              <1>     call [ShowWindow] 
+   112                              <1> 								 
+   113                              <1>     push dword [ebp-76] 		;; UpdateWindow([ebp-76])
+   114                              <1>     call [UpdateWindow]   
+   115                              <1> %endmacro
+   116                              <1> 
+   117                              <1> %macro CreateLabel 6
+   118                              <1>     push dword 0 
+   119                              <1>     push dword [hInstance] 		;; hInstance value in [ebp+8]
+   120                              <1>     push dword 0 
+   121                              <1>     push dword [ebp-76]			;; handle to window in [ebp-76] 
+   122                              <1>     push dword %6				;; tinggi= 22 
+   123                              <1>     push dword %5	            ;; lebar = 90
+   124                              <1>     push dword %4				;; y = 50
+   125                              <1>     push dword %3			    ;; x = 55
+   126                              <1>     push dword 0x40000000 | 0x10000000 | 0x0000000B 		
+   127                              <1> 								;; WS_CHILD | WS_VISIBLE | SS_SIMPLE           
+   128                              <1> 	push dword %2				;; LabelText1
+   129                              <1>     push dword LblClassName		;; LblClassName 
+   130                              <1>     push dword 00000200h		;; WS_EX_CLIENTEDGE 
+   131                              <1>     call [CreateWindowExA]
+   132                              <1> 	mov [%1],eax
+   133                              <1> %endmacro
+   134                              <1> 
+   135                              <1> %macro CreateEditBox 7
+   136                              <1>     push dword 0 
+   137                              <1>     push dword [hInstance] 		;; hInstance value in [ebp+8]
+   138                              <1>     push dword %7				;; EditID 
+   139                              <1>     push dword [ebp-76]			;; handle to window in [ebp-76] 
+   140                              <1>     push dword %6				;25			tinggi 
+   141                              <1>     push dword %5				;250        lebar. 
+   142                              <1>     push dword %4				;50			y
+   143                              <1>     push dword %3				;150		x 
+   144                              <1>     push dword 0x40000000 | 0x10000000 
+   145                              <1> 								;;  WS_CHILD  | WS_VISIBLE 
+   146                              <1> 	push dword %2 
+   147                              <1>     push dword EditClassName 
+   148                              <1>     push dword 00000200h		;;WS_EX_CLIENTEDGE 
+   149                              <1>     call [CreateWindowExA]
+   150                              <1> 	mov [%1],eax
+   151                              <1> %endmacro
+   152                              <1> 
+   153                              <1> %macro CreateButton 7
+   154                              <1>     push dword 0 
+   155                              <1>     push dword [hInstance] 		;; hInstance value in [ebp+8]
+   156                              <1>     push dword %7 
+   157                              <1>     push dword [ebp-76]			;; handle to window in [ebp-76] 
+   158                              <1>     push dword %6				;; tinggi 
+   159                              <1>     push dword %5               ;; lebar. 
+   160                              <1>     push dword %4				;; x 
+   161                              <1>     push dword %3			    ;; y 
+   162                              <1>     push dword 0x40000000 | 0x10000000 | 0x1    
+   163                              <1>                                 ;; WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON
+   164                              <1>     push dword %2 
+   165                              <1>     push dword ButtonClassName 
+   166                              <1>     push dword 0 
+   167                              <1>     call [CreateWindowExA]
+   168                              <1> 	mov [%1],eax  
+   169                              <1> %endmacro
+   170                              <1> 
+   171                              <1> %macro GetMessage 0
+   172                              <1>         push dword 0 			;; GetMessage(the MSG structure, 0, 0, 0)
+   173                              <1>         push dword 0 
+   174                              <1>         push dword 0 
+   175                              <1> 		lea ebx, [ebp-72] 
+   176                              <1>         push ebx 
+   177                              <1>         call [GetMessageA] 
+   178                              <1> %endmacro								 
+   179                              <1>  
+   180                              <1> %macro TranslateMsg 0
+   181                              <1>         lea ebx, [ebp-72] 		;; TranslateMessage(the MSG)
+   182                              <1>         push ebx 
+   183                              <1>         call [TranslateMessage] 
+   184                              <1> %endmacro								 
+   185                              <1> 
+   186                              <1> %macro DispatchMsg 0
+   187                              <1>         lea ebx, [ebp-72] 		;; DispatchMessage(the MSG)
+   188                              <1>         push ebx 
+   189                              <1>         call [DispatchMessageA] 
+   190                              <1> %endmacro								 
+   191                              <1> 
+   192                              <1> ;int GetWindowTextA(
+   193                              <1> ;  HWND  hWnd,
+   194                              <1> ;  LPSTR lpString,
+   195                              <1> ;  int   nMaxCount
+   196                              <1> ;)
+   197                              <1> 
+   198                              <1> %macro GetTextEditBox 4
+   199                              <1> 	push word  %3
+   200                              <1> 	push dword %2 
+   201                              <1> 	push dword %1
+   202                              <1> 	Call [GetWindowTextA]
+   203                              <1> 	mov [%4], eax
+   204                              <1> %endmacro
+   205                              <1> 
+   206                              <1> ;BOOL SetWindowTextA(
+   207                              <1> ;  HWND   hWnd,
+   208                              <1> ;  LPCSTR lpString
+   209                              <1> ;);
+   210                              <1> 
+   211                              <1> %macro SetTextEditBox 2
+   212                              <1> 	push dword %2 
+   213                              <1> 	push dword %1
+   214                              <1> 	Call [SetWindowTextA]
+   215                              <1> %endmacro
+   216                              <1> 
+   217                              <1> %macro str2int 1
+   218                              <1>         push    ebx ;
+   219                              <1>         push    esi ;
+   220                              <1>         push    edi ;
+   221                              <1>         mov ebx, 0
+   222                              <1>         mov ecx, 0
+   223                              <1>         xor eax,eax
+   224                              <1>         mov ebx,0000000Ah
+   225                              <1>         mov esi, %1
+   226                              <1>         %%ConvertLoop:
+   227                              <1>         movzx ecx,byte [esi] ;Zeichen laden.
+   228                              <1>         test ecx,ecx
+   229                              <1>         jz  short %%ExitConvertLoop ;0 => Exit
+   230                              <1>         inc esi
+   231                              <1>         sub cl,30h ;0-9...
+   232                              <1>         mul ebx ;Ergebnis * 10
+   233                              <1>         add eax,ecx ;+ nächste Ziffer
+   234                              <1>         jmp short %%ConvertLoop
+   235                              <1>         %%ExitConvertLoop:
+   236                              <1>         pop     edi
+   237                              <1>         pop     esi
+   238                              <1>         pop     ebx
+   239                              <1> %endmacro
+   240                              <1> 
+   241                              <1> %macro int2str 2
+   242                              <1>         push    ebx ;
+   243                              <1>         push    esi ;
+   244                              <1>         push    edi ;
+   245                              <1>         %%start:
+   246                              <1>         mov  eax, %1
+   247                              <1>         xor  ecx, ecx
+   248                              <1>         mov  ebx, 000Ah
+   249                              <1>         %%DecConvert:
+   250                              <1>         xor  edx,  edx
+   251                              <1>         div  ebx
+   252                              <1>         add  edx,  0030h
+   253                              <1>         push edx
+   254                              <1>         inc  ecx
+   255                              <1>         or   eax,  eax
+   256                              <1>         jnz  short %%DecConvert
+   257                              <1>         mov  edi,  %2
+   258                              <1>         %%SortDec:
+   259                              <1>         pop   eax
+   260                              <1>         stosb
+   261                              <1>         loop  %%SortDec
+   262                              <1>         mov eax, 0h
+   263                              <1>         stosb
+   264                              <1>         pop     edi
+   265                              <1>         pop     esi
+   266                              <1>         pop     ebx
+   267                              <1> %endmacro
+   268                              <1> 
+   269                              <1> ;LRESULT SendMessageA(
+   270                              <1> ;  HWND   hWnd,
+   271                              <1> ;  UINT   Msg,
+   272                              <1> ;  WPARAM wParam,
+   273                              <1> ;  LPARAM lParam
+   274                              <1> ;);
+     2                                  
+     3                                  WM_CREATE		equ 1h
+     4                                  WM_DESTROY		equ 2h
+     5                                  WM_COMMAND      equ 0111h
+     6                                  BN_CLICKED		equ 0h
+     7                                  
+     8                                  EditID1			equ 1111
+     9                                  EditID2			equ 1112
+    10                                  EditID3			equ 1113
+    11                                  EditID4			equ 1114
+    12                                  
+    13                                  ButtonID0		equ 2220
+    14                                  ButtonID1		equ 2221
+    15                                  ButtonID2		equ 2222
+    16                                  ButtonID3		equ 2223
+    17                                  ButtonID4		equ 2224
+    18                                  
+    19                                  section .data 
+    20 00000000 43616C63756C61746F-     ClassName		db "Calculator", 0 			;DefiniSI Class Calculator
+    20 00000009 7200               
+    21 0000000B 53696D706C65204361-     TitleBar		db "Simple Calculator", 0 
+    21 00000014 6C63756C61746F7200 
+    22 0000001D 53756D6D696E672052-     TitlemBox		db "Summing Result", 0
+    22 00000026 6573756C7400       
+    23 0000002C 46696E69736800          TitleExit		db "Finish", 0
+    24 00000033 4558495400              ExitBox			db "EXIT", 0
+    25                                  
+    26 00000038 4564697400              EditClassName   db "Edit", 0					;DefiniSI Class EditBox
+    27 0000003D 00                      EditText		db "", 0
+    28                                  
+    29 0000003E 53746174696300          LblClassName	db "Static", 0				;DefiniSI Class Static untuk LABEL
+    30 00000045 317374204E756D6265-     LabelText1		db "1st Number	: ", 0
+    30 0000004E 72093A2000         
+    31 00000053 326E64204E756D6265-     LabelText2		db "2nd Number	: ", 0
+    31 0000005C 72093A2000         
+    32 00000061 526573756C74093A20-     LabelText3		db "Result	: ", 0
+    32 0000006A 00                 
+    33 0000006B 52656D61696E646572-     LabelText4		db "Remainder	: ", 0
+    33 00000074 093A2000           
+    34                                  
+    35 00000078 427574746F6E00          ButtonClassName	db "Button", 0				;DefiniSI Class Button
+    36 0000007F 2B00                    ButtonText0     db "+", 0
+    37 00000081 2D00                    ButtonText1     db "-", 0
+    38 00000083 2A00                    ButtonText2     db "*", 0
+    39 00000085 2F00                    ButtonText3     db "/", 0
+    40 00000087 4558495400              ButtonText4		db "EXIT", 0
+    41                                  
+    42 0000008C 3000                    DefaultValue	db "0", 0
+    43                                  
+    44 0000008E 4661696C2063726561-     err_msg			db "Fail create Window. ", 0
+    44 00000097 74652057696E646F77-
+    44 000000A0 2E2000             
+    45                                  
+    46 000000A3 00<rept>                buff1          	times 128 db 0 
+    47 00000123 00<rept>                buff2          	times 128 db 0
+    48 000001A3 <res 00000002>          blen1			resw 1
+    49 000001A5 <res 00000002>          blen2			resw 1
+    50 000001A7 00<rept>                bufferA			times 1024 db 0
+    51                                  
+    52 000005A7 <res 00000200>          shaSIl1          resb 512
+    53 000007A7 <res 00000200>          shaSIl2          resb 512
+    54 000009A7 2D                      strminus		 db "-"
+    55 000009A8 <res 00000200>          strcopy			 resb 512
+    56                                  
+    57                                  section .bss 
+    58 00000000 <res 00000004>          hInstance       resd 1 
+    59 00000004 <res 00000004>          CommandLine     resd 1
+    60 00000008 <res 00000004>          hWind			resd 1
+    61 0000000C <res 00000004>          hwndButton0     resd 1
+    62 00000010 <res 00000004>          hwndButton1     resd 1
+    63 00000014 <res 00000004>          hwndButton2     resd 1
+    64 00000018 <res 00000004>          hwndButton3     resd 1
+    65 0000001C <res 00000004>          hwndButton4		resd 1
+    66 00000020 <res 00000004>          hwndEdit1       resd 1
+    67 00000024 <res 00000004>          hwndEdit2       resd 1
+    68 00000028 <res 00000004>          hwndEdit3       resd 1
+    69 0000002C <res 00000004>          hwndEdit4       resd 1
+    70 00000030 <res 00000004>          hwndLbl1		resd 1
+    71 00000034 <res 00000004>          hwndLbl2		resd 1
+    72 00000038 <res 00000004>          hwndLbl3		resd 1
+    73 0000003C <res 00000004>          hwndLbl4		resd 1
+    74 00000040 00000000                nhaSIl1			dd 0
+    75 00000044 00000000                nhaSIl2			dd 0
+    76                                  
+    77                                  ;==========================================================================================================
+    78                                  section .text use32 
+    79                                  ..start: 
+    80                                  GetModuleHandle
+    80 00000000 6A00                <1>  push dword 0
+    80 00000002 FF15[00000000]      <1>  call [GetModuleHandleA]
+    80 00000008 A3[00000000]        <1>  mov dword [hInstance], eax
+    81                                  GetCommandLine
+    81 0000000D FF15[00000000]      <1>  call [GetCommandLineA]
+    81 00000013 A3[04000000]        <1>  mov dword [CommandLine], eax
+    82                                  							;; WindowMain() require 4 paramater: 
+    83 00000018 6A0A                    PUSH dword 10 				;; SW_SHOWDEFAULT is defined as 10
+    84 0000001A FF35[04000000]          PUSH dword [CommandLine]	;; CommandLine. 
+    85 00000020 6A00                    PUSH dword 0 				;; 0
+    86 00000022 FF35[00000000]          PUSH dword [hInstance]		;; hInstance	 
+    87 00000028 E807000000              CALL WindowMain 
+    88                                  							 
+    89 0000002D 50                      PUSH EAX 					;; Then we exit the program, returning EAX
+    90 0000002E FF15[00000000]          CALL [ExitProcess]			;; which is what WindowMain() will return. 
+    91                                  ;======================================================================================================================= 
+    92                                  
+    93                                  WindowMain:					;; WindowMain() function. 
+    94 00000034 C84C0000                    ENTER 76, 0 
+    95                                  	
+    96                                      RegisterClass 			;; Create window-class and register
+    96                              <1> 
+    96 00000038 8D5DD0              <1>  lea ebx, [ebp-48]
+    96 0000003B C70330000000        <1>  mov dword [ebx+00], 48
+    96 00000041 C7430403000000      <1>  mov dword [ebx+04], 3
+    96 00000048 C74308[42040000]    <1>  mov dword [ebx+08], WindowProcedure
+    96 0000004F C7430C00000000      <1>  mov dword [ebx+12], 0
+    96 00000056 C7431000000000      <1>  mov dword [ebx+16], 0
+    96                              <1> 
+    96 0000005D 8B4508              <1>  mov eax, dword [ebp+8]
+    96 00000060 894314              <1>  mov dword [ebx+20], eax
+    96                              <1> 
+    96 00000063 C7432005000000      <1>  mov dword [ebx+32], 5
+    96 0000006A C7432400000000      <1>  mov dword [ebx+36], 0
+    96 00000071 C74328[00000000]    <1>  mov dword [ebx+40], ClassName
+    96                              <1> 
+    96 00000078 68007F0000          <1>  push dword 32512
+    96 0000007D 6A00                <1>  push dword 0
+    96 0000007F FF15[00000000]      <1>  call [LoadIconA]
+    96                              <1> 
+    96                              <1> 
+    96                              <1> 
+    96 00000085 894318              <1>  mov dword [ebx+24], eax
+    96 00000088 89432C              <1>  mov dword [ebx+44], eax
+    96                              <1> 
+    96 0000008B 68007F0000          <1>  push dword 32512
+    96 00000090 6A00                <1>  push dword 0
+    96 00000092 FF15[00000000]      <1>  call [LoadCursorA]
+    96                              <1> 
+    96 00000098 89431C              <1>  mov dword [ebx+28], eax
+    96                              <1> 
+    96                              <1> 
+    96                              <1> 
+    96                              <1> 
+    96                              <1> 
+    96 0000009B 53                  <1>  push ebx
+    96 0000009C FF15[00000000]      <1>  call [RegisterClassExA]
+    96                              <1> 
+    97                                      CreateWindow ClassName, TitleBar, 500, 150, 500, 400 
+    97                              <1> 
+    97                              <1> 
+    97                              <1> 
+    97 000000A2 6A00                <1>  push dword 0
+    97 000000A4 FF7508              <1>  push dword [ebp+8]
+    97 000000A7 6A00                <1>  push dword 0
+    97 000000A9 6A00                <1>  push dword 0
+    97 000000AB 6890010000          <1>  push dword %6
+    97 000000B0 68F4010000          <1>  push dword %5
+    97 000000B5 6896000000          <1>  push dword %4
+    97 000000BA 68F4010000          <1>  push dword %3
+    97 000000BF 680000CF00          <1>  push dword 0x00 | 0xC00000 | 0x80000 | 0x20000 | 0x10000 | 0x40000
+    97                              <1> 
+    97 000000C4 68[0B000000]        <1>  push dword %2
+    97 000000C9 68[00000000]        <1>  push dword %1
+    97 000000CE 6800020000          <1>  push dword 0000200h
+    97 000000D3 FF15[00000000]      <1>  call [CreateWindowExA]
+    97                              <1> 
+    97 000000D9 8945B4              <1>  mov dword [ebp-76], eax
+    97                              <1> 
+    97 000000DC A3[08000000]        <1>  mov dword [hWind], eax
+    97                              <1> 
+    97 000000E1 83E800              <1>  sub eax, 0
+    97                              <1> 
+    97 000000E4 0F8434030000        <1>  jz .new_window_failed
+    97                              <1> 
+    97 000000EA FF7514              <1>  push dword [ebp+20]
+    97 000000ED FF75B4              <1>  push dword [ebp-76]
+    97 000000F0 FF15[00000000]      <1>  call [ShowWindow]
+    97                              <1> 
+    97 000000F6 FF75B4              <1>  push dword [ebp-76]
+    97 000000F9 FF15[00000000]      <1>  call [UpdateWindow]
+    98                                  	
+    99                                  	CreateLabel hwndLbl1, LabelText1, 20, 35, 110, 25
+    99 000000FF 6A00                <1>  push dword 0
+    99 00000101 FF35[00000000]      <1>  push dword [hInstance]
+    99 00000107 6A00                <1>  push dword 0
+    99 00000109 FF75B4              <1>  push dword [ebp-76]
+    99 0000010C 6A19                <1>  push dword %6
+    99 0000010E 6A6E                <1>  push dword %5
+    99 00000110 6A23                <1>  push dword %4
+    99 00000112 6A14                <1>  push dword %3
+    99 00000114 680B000050          <1>  push dword 0x40000000 | 0x10000000 | 0x0000000B
+    99                              <1> 
+    99 00000119 68[45000000]        <1>  push dword %2
+    99 0000011E 68[3E000000]        <1>  push dword LblClassName
+    99 00000123 6800020000          <1>  push dword 00000200h
+    99 00000128 FF15[00000000]      <1>  call [CreateWindowExA]
+    99 0000012E A3[30000000]        <1>  mov [%1],eax
+   100                                  	CreateLabel hwndLbl2, LabelText2, 20, 65, 110, 25
+   100 00000133 6A00                <1>  push dword 0
+   100 00000135 FF35[00000000]      <1>  push dword [hInstance]
+   100 0000013B 6A00                <1>  push dword 0
+   100 0000013D FF75B4              <1>  push dword [ebp-76]
+   100 00000140 6A19                <1>  push dword %6
+   100 00000142 6A6E                <1>  push dword %5
+   100 00000144 6A41                <1>  push dword %4
+   100 00000146 6A14                <1>  push dword %3
+   100 00000148 680B000050          <1>  push dword 0x40000000 | 0x10000000 | 0x0000000B
+   100                              <1> 
+   100 0000014D 68[53000000]        <1>  push dword %2
+   100 00000152 68[3E000000]        <1>  push dword LblClassName
+   100 00000157 6800020000          <1>  push dword 00000200h
+   100 0000015C FF15[00000000]      <1>  call [CreateWindowExA]
+   100 00000162 A3[34000000]        <1>  mov [%1],eax
+   101                                  	CreateLabel hwndLbl3, LabelText3, 20, 95, 110, 25
+   101 00000167 6A00                <1>  push dword 0
+   101 00000169 FF35[00000000]      <1>  push dword [hInstance]
+   101 0000016F 6A00                <1>  push dword 0
+   101 00000171 FF75B4              <1>  push dword [ebp-76]
+   101 00000174 6A19                <1>  push dword %6
+   101 00000176 6A6E                <1>  push dword %5
+   101 00000178 6A5F                <1>  push dword %4
+   101 0000017A 6A14                <1>  push dword %3
+   101 0000017C 680B000050          <1>  push dword 0x40000000 | 0x10000000 | 0x0000000B
+   101                              <1> 
+   101 00000181 68[61000000]        <1>  push dword %2
+   101 00000186 68[3E000000]        <1>  push dword LblClassName
+   101 0000018B 6800020000          <1>  push dword 00000200h
+   101 00000190 FF15[00000000]      <1>  call [CreateWindowExA]
+   101 00000196 A3[38000000]        <1>  mov [%1],eax
+   102                                  	CreateLabel hwndLbl4, LabelText4, 20, 125, 110, 25
+   102 0000019B 6A00                <1>  push dword 0
+   102 0000019D FF35[00000000]      <1>  push dword [hInstance]
+   102 000001A3 6A00                <1>  push dword 0
+   102 000001A5 FF75B4              <1>  push dword [ebp-76]
+   102 000001A8 6A19                <1>  push dword %6
+   102 000001AA 6A6E                <1>  push dword %5
+   102 000001AC 6A7D                <1>  push dword %4
+   102 000001AE 6A14                <1>  push dword %3
+   102 000001B0 680B000050          <1>  push dword 0x40000000 | 0x10000000 | 0x0000000B
+   102                              <1> 
+   102 000001B5 68[6B000000]        <1>  push dword %2
+   102 000001BA 68[3E000000]        <1>  push dword LblClassName
+   102 000001BF 6800020000          <1>  push dword 00000200h
+   102 000001C4 FF15[00000000]      <1>  call [CreateWindowExA]
+   102 000001CA A3[3C000000]        <1>  mov [%1],eax
+   103                                  	
+   104                                  	CreateEditBox hwndEdit1, EditText, 135, 35, 270, 25, EditID1
+   104 000001CF 6A00                <1>  push dword 0
+   104 000001D1 FF35[00000000]      <1>  push dword [hInstance]
+   104 000001D7 6857040000          <1>  push dword %7
+   104 000001DC FF75B4              <1>  push dword [ebp-76]
+   104 000001DF 6A19                <1>  push dword %6
+   104 000001E1 680E010000          <1>  push dword %5
+   104 000001E6 6A23                <1>  push dword %4
+   104 000001E8 6887000000          <1>  push dword %3
+   104 000001ED 6800000050          <1>  push dword 0x40000000 | 0x10000000
+   104                              <1> 
+   104 000001F2 68[3D000000]        <1>  push dword %2
+   104 000001F7 68[38000000]        <1>  push dword EditClassName
+   104 000001FC 6800020000          <1>  push dword 00000200h
+   104 00000201 FF15[00000000]      <1>  call [CreateWindowExA]
+   104 00000207 A3[20000000]        <1>  mov [%1],eax
+   105                                  	CreateEditBox hwndEdit2, EditText, 135, 65, 270, 25, EditID2
+   105 0000020C 6A00                <1>  push dword 0
+   105 0000020E FF35[00000000]      <1>  push dword [hInstance]
+   105 00000214 6858040000          <1>  push dword %7
+   105 00000219 FF75B4              <1>  push dword [ebp-76]
+   105 0000021C 6A19                <1>  push dword %6
+   105 0000021E 680E010000          <1>  push dword %5
+   105 00000223 6A41                <1>  push dword %4
+   105 00000225 6887000000          <1>  push dword %3
+   105 0000022A 6800000050          <1>  push dword 0x40000000 | 0x10000000
+   105                              <1> 
+   105 0000022F 68[3D000000]        <1>  push dword %2
+   105 00000234 68[38000000]        <1>  push dword EditClassName
+   105 00000239 6800020000          <1>  push dword 00000200h
+   105 0000023E FF15[00000000]      <1>  call [CreateWindowExA]
+   105 00000244 A3[24000000]        <1>  mov [%1],eax
+   106                                  	CreateEditBox hwndEdit3, EditText, 135, 95, 270, 25, EditID3
+   106 00000249 6A00                <1>  push dword 0
+   106 0000024B FF35[00000000]      <1>  push dword [hInstance]
+   106 00000251 6859040000          <1>  push dword %7
+   106 00000256 FF75B4              <1>  push dword [ebp-76]
+   106 00000259 6A19                <1>  push dword %6
+   106 0000025B 680E010000          <1>  push dword %5
+   106 00000260 6A5F                <1>  push dword %4
+   106 00000262 6887000000          <1>  push dword %3
+   106 00000267 6800000050          <1>  push dword 0x40000000 | 0x10000000
+   106                              <1> 
+   106 0000026C 68[3D000000]        <1>  push dword %2
+   106 00000271 68[38000000]        <1>  push dword EditClassName
+   106 00000276 6800020000          <1>  push dword 00000200h
+   106 0000027B FF15[00000000]      <1>  call [CreateWindowExA]
+   106 00000281 A3[28000000]        <1>  mov [%1],eax
+   107                                  	CreateEditBox hwndEdit4, EditText, 135, 125, 270, 25, EditID4
+   107 00000286 6A00                <1>  push dword 0
+   107 00000288 FF35[00000000]      <1>  push dword [hInstance]
+   107 0000028E 685A040000          <1>  push dword %7
+   107 00000293 FF75B4              <1>  push dword [ebp-76]
+   107 00000296 6A19                <1>  push dword %6
+   107 00000298 680E010000          <1>  push dword %5
+   107 0000029D 6A7D                <1>  push dword %4
+   107 0000029F 6887000000          <1>  push dword %3
+   107 000002A4 6800000050          <1>  push dword 0x40000000 | 0x10000000
+   107                              <1> 
+   107 000002A9 68[3D000000]        <1>  push dword %2
+   107 000002AE 68[38000000]        <1>  push dword EditClassName
+   107 000002B3 6800020000          <1>  push dword 00000200h
+   107 000002B8 FF15[00000000]      <1>  call [CreateWindowExA]
+   107 000002BE A3[2C000000]        <1>  mov [%1],eax
+   108                                  	
+   109                                  	CreateButton hwndButton0, ButtonText0, 135, 170, 25, 25, ButtonID0
+   109 000002C3 6A00                <1>  push dword 0
+   109 000002C5 FF35[00000000]      <1>  push dword [hInstance]
+   109 000002CB 68AC080000          <1>  push dword %7
+   109 000002D0 FF75B4              <1>  push dword [ebp-76]
+   109 000002D3 6A19                <1>  push dword %6
+   109 000002D5 6A19                <1>  push dword %5
+   109 000002D7 68AA000000          <1>  push dword %4
+   109 000002DC 6887000000          <1>  push dword %3
+   109 000002E1 6801000050          <1>  push dword 0x40000000 | 0x10000000 | 0x1
+   109                              <1> 
+   109 000002E6 68[7F000000]        <1>  push dword %2
+   109 000002EB 68[78000000]        <1>  push dword ButtonClassName
+   109 000002F0 6A00                <1>  push dword 0
+   109 000002F2 FF15[00000000]      <1>  call [CreateWindowExA]
+   109 000002F8 A3[0C000000]        <1>  mov [%1],eax
+   110                                  	CreateButton hwndButton1, ButtonText1, 165, 170, 25, 25, ButtonID1
+   110 000002FD 6A00                <1>  push dword 0
+   110 000002FF FF35[00000000]      <1>  push dword [hInstance]
+   110 00000305 68AD080000          <1>  push dword %7
+   110 0000030A FF75B4              <1>  push dword [ebp-76]
+   110 0000030D 6A19                <1>  push dword %6
+   110 0000030F 6A19                <1>  push dword %5
+   110 00000311 68AA000000          <1>  push dword %4
+   110 00000316 68A5000000          <1>  push dword %3
+   110 0000031B 6801000050          <1>  push dword 0x40000000 | 0x10000000 | 0x1
+   110                              <1> 
+   110 00000320 68[81000000]        <1>  push dword %2
+   110 00000325 68[78000000]        <1>  push dword ButtonClassName
+   110 0000032A 6A00                <1>  push dword 0
+   110 0000032C FF15[00000000]      <1>  call [CreateWindowExA]
+   110 00000332 A3[10000000]        <1>  mov [%1],eax
+   111                                  	CreateButton hwndButton2, ButtonText2, 195, 170, 25, 25, ButtonID2
+   111 00000337 6A00                <1>  push dword 0
+   111 00000339 FF35[00000000]      <1>  push dword [hInstance]
+   111 0000033F 68AE080000          <1>  push dword %7
+   111 00000344 FF75B4              <1>  push dword [ebp-76]
+   111 00000347 6A19                <1>  push dword %6
+   111 00000349 6A19                <1>  push dword %5
+   111 0000034B 68AA000000          <1>  push dword %4
+   111 00000350 68C3000000          <1>  push dword %3
+   111 00000355 6801000050          <1>  push dword 0x40000000 | 0x10000000 | 0x1
+   111                              <1> 
+   111 0000035A 68[83000000]        <1>  push dword %2
+   111 0000035F 68[78000000]        <1>  push dword ButtonClassName
+   111 00000364 6A00                <1>  push dword 0
+   111 00000366 FF15[00000000]      <1>  call [CreateWindowExA]
+   111 0000036C A3[14000000]        <1>  mov [%1],eax
+   112                                  	CreateButton hwndButton3, ButtonText3, 225,  170, 25, 25, ButtonID3
+   112 00000371 6A00                <1>  push dword 0
+   112 00000373 FF35[00000000]      <1>  push dword [hInstance]
+   112 00000379 68AF080000          <1>  push dword %7
+   112 0000037E FF75B4              <1>  push dword [ebp-76]
+   112 00000381 6A19                <1>  push dword %6
+   112 00000383 6A19                <1>  push dword %5
+   112 00000385 68AA000000          <1>  push dword %4
+   112 0000038A 68E1000000          <1>  push dword %3
+   112 0000038F 6801000050          <1>  push dword 0x40000000 | 0x10000000 | 0x1
+   112                              <1> 
+   112 00000394 68[85000000]        <1>  push dword %2
+   112 00000399 68[78000000]        <1>  push dword ButtonClassName
+   112 0000039E 6A00                <1>  push dword 0
+   112 000003A0 FF15[00000000]      <1>  call [CreateWindowExA]
+   112 000003A6 A3[18000000]        <1>  mov [%1],eax
+   113                                  	CreateButton hwndButton4, ButtonText4, 255,  170, 50, 25, ButtonID4
+   113 000003AB 6A00                <1>  push dword 0
+   113 000003AD FF35[00000000]      <1>  push dword [hInstance]
+   113 000003B3 68B0080000          <1>  push dword %7
+   113 000003B8 FF75B4              <1>  push dword [ebp-76]
+   113 000003BB 6A19                <1>  push dword %6
+   113 000003BD 6A32                <1>  push dword %5
+   113 000003BF 68AA000000          <1>  push dword %4
+   113 000003C4 68FF000000          <1>  push dword %3
+   113 000003C9 6801000050          <1>  push dword 0x40000000 | 0x10000000 | 0x1
+   113                              <1> 
+   113 000003CE 68[87000000]        <1>  push dword %2
+   113 000003D3 68[78000000]        <1>  push dword ButtonClassName
+   113 000003D8 6A00                <1>  push dword 0
+   113 000003DA FF15[00000000]      <1>  call [CreateWindowExA]
+   113 000003E0 A3[1C000000]        <1>  mov [%1],eax
+   114                                  		
+   115 000003E5 FF35[20000000]          	PUSH dword [hwndEdit1]
+   116 000003EB FF15[00000000]          	CALL [SetFocus]
+   117                                  	
+   118                                      .MessageLoop: 
+   119                                  								 
+   120                                          GetMessage 
+   120 000003F1 6A00                <1>  push dword 0
+   120 000003F3 6A00                <1>  push dword 0
+   120 000003F5 6A00                <1>  push dword 0
+   120 000003F7 8D5DB8              <1>  lea ebx, [ebp-72]
+   120 000003FA 53                  <1>  push ebx
+   120 000003FB FF15[00000000]      <1>  call [GetMessageA]
+   121 00000401 83F800                          CMP EAX, 0 				;; If GetMessage() returns 0, it's time to exit.
+   122 00000404 7416                            JZ .MessageLoopExit 
+   123                                  								 
+   124                                  		TranslateMsg	
+   124 00000406 8D5DB8              <1>  lea ebx, [ebp-72]
+   124 00000409 53                  <1>  push ebx
+   124 0000040A FF15[00000000]      <1>  call [TranslateMessage]
+   125                                  		DispatchMsg
+   125 00000410 8D5DB8              <1>  lea ebx, [ebp-72]
+   125 00000413 53                  <1>  push ebx
+   125 00000414 FF15[00000000]      <1>  call [DispatchMessageA]
+   126                                  
+   127 0000041A EBD5                            JMP .MessageLoop 		;; And start the loop over again.
+   128                                      
+   129                                  	.MessageLoopExit: 
+   130                                  								;; We'll need to jump over the error-handling routing, so we can continue. 
+   131 0000041C EB1A                    		JMP .finish 
+   132                                      
+   133                                      .new_window_failed: 
+   134                                  								;; Display a message box with the error message.
+   135 0000041E 6A00                            PUSH dword 0 			;; MB_OK
+   136 00000420 6A00                            PUSH dword 0 			;; Report
+   137 00000422 68[8E000000]                    PUSH dword err_msg 		;; Display message
+   138 00000427 6A00                            PUSH dword 0 
+   139 00000429 FF15[00000000]                  CALL [MessageBoxA] 
+   140                                          						 
+   141 0000042F B801000000                      MOV EAX, 1 				;; Exit, returning 1.
+   142 00000434 C9                              LEAVE 
+   143 00000435 C21000                          RET 16 
+   144                                      
+   145                                  	.finish: 
+   146                                  								;; We return the MSG.wParam value.
+   147 00000438 8D5DB8                  		lea EBX, [EBP-72] 		;; msg
+   148 0000043B 8B4308                  		MOV EAX, dword [EBX+08] ;; msg + MSG.wParam 
+   149 0000043E C9                      		LEAVE 
+   150 0000043F C21000                  		RET 16  
+   151                                  
+   152                                  WindowProcedure: 
+   153 00000442 C8000000                    ENTER 0, 0		
+   154 00000446 8B450C                      MOV EAX, dword [EBP+12]		;; uMsg
+   155                                      
+   156 00000449 83F802                      CMP EAX, WM_DESTROY		 
+   157 0000044C 0F84B3040000                JZ .window_destroy          ;; If EAX equal to WM_DESTROY, jump to .window_destroy
+   158                                  
+   159 00000452 3D11010000                  CMP EAX, WM_COMMAND 		;; Else compare to WM_COMMAND
+   160 00000457 0F85B2040000            	JNZ .window_default
+   161                                  
+   162 0000045D 8B4510                  	MOV EAX, dword [EBP+16]		;; If it's equal, retrieve wParam
+   163                                  	
+   164                                  	.CheckButton4:
+   165 00000460 3DB0080000                  CMP EAX, ButtonID4
+   166 00000465 7516                    	JNZ .CheckButton0
+   167                                  	
+   168 00000467 E801050000              	CALL mBoxKonfirmaSI
+   169                                  	
+   170 0000046C C1E810                  	SHR EAX, 16					;; Shiftleft 16bit to get Event
+   171 0000046F 83F800                  	CMP EAX, BN_CLICKED			;; If it's Button-Click
+   172 00000472 0F848D040000            	JZ .window_destroy          ;; If it's equal, jump to .window_destroy label
+   173 00000478 E992040000                  JMP .window_default			;; Else just jump to the window_default label.
+   174                                  	
+   175                                  	.CheckButton0:
+   176 0000047D 3DAC080000              	CMP EAX, ButtonID0
+   177 00000482 0F8506010000            	JNZ .CheckButton1
+   178                                  	
+   179 00000488 C1E810                  	SHR EAX, 16					;; Shiftleft 16bit to get Event
+   180 0000048B 83F800                  	CMP EAX, BN_CLICKED			;; If it's Button-Click
+   181 0000048E 0F857B040000            	JNZ .window_default
+   182                                  	
+   183                                  	GetTextEditBox [hwndEdit1], buff1, 128, blen1
+   183 00000494 66688000            <1>  push word %3
+   183 00000498 68[A3000000]        <1>  push dword %2
+   183 0000049D FF35[20000000]      <1>  push dword %1
+   183 000004A3 FF15[00000000]      <1>  Call [GetWindowTextA]
+   183 000004A9 A3[A3010000]        <1>  mov [%4], eax
+   184                                  	GetTextEditBox [hwndEdit2], buff2, 128, blen2
+   184 000004AE 66688000            <1>  push word %3
+   184 000004B2 68[23010000]        <1>  push dword %2
+   184 000004B7 FF35[24000000]      <1>  push dword %1
+   184 000004BD FF15[00000000]      <1>  Call [GetWindowTextA]
+   184 000004C3 A3[A5010000]        <1>  mov [%4], eax
+   185                                  	str2int buff1
+   185 000004C8 53                  <1>  push ebx
+   185 000004C9 56                  <1>  push esi
+   185 000004CA 57                  <1>  push edi
+   185 000004CB BB00000000          <1>  mov ebx, 0
+   185 000004D0 B900000000          <1>  mov ecx, 0
+   185 000004D5 31C0                <1>  xor eax,eax
+   185 000004D7 BB0A000000          <1>  mov ebx,0000000Ah
+   185 000004DC BE[A3000000]        <1>  mov esi, %1
+   185                              <1>  %%ConvertLoop:
+   185 000004E1 0FB60E              <1>  movzx ecx,byte [esi]
+   185 000004E4 85C9                <1>  test ecx,ecx
+   185 000004E6 740A                <1>  jz short %%ExitConvertLoop
+   185 000004E8 46                  <1>  inc esi
+   185 000004E9 80E930              <1>  sub cl,30h
+   185 000004EC F7E3                <1>  mul ebx
+   185 000004EE 01C8                <1>  add eax,ecx
+   185 000004F0 EBEF                <1>  jmp short %%ConvertLoop
+   185                              <1>  %%ExitConvertLoop:
+   185 000004F2 5F                  <1>  pop edi
+   185 000004F3 5E                  <1>  pop esi
+   185 000004F4 5B                  <1>  pop ebx
+   186 000004F5 A3[A3000000]            	MOV [buff1],EAX
+   187                                  	str2int buff2
+   187 000004FA 53                  <1>  push ebx
+   187 000004FB 56                  <1>  push esi
+   187 000004FC 57                  <1>  push edi
+   187 000004FD BB00000000          <1>  mov ebx, 0
+   187 00000502 B900000000          <1>  mov ecx, 0
+   187 00000507 31C0                <1>  xor eax,eax
+   187 00000509 BB0A000000          <1>  mov ebx,0000000Ah
+   187 0000050E BE[23010000]        <1>  mov esi, %1
+   187                              <1>  %%ConvertLoop:
+   187 00000513 0FB60E              <1>  movzx ecx,byte [esi]
+   187 00000516 85C9                <1>  test ecx,ecx
+   187 00000518 740A                <1>  jz short %%ExitConvertLoop
+   187 0000051A 46                  <1>  inc esi
+   187 0000051B 80E930              <1>  sub cl,30h
+   187 0000051E F7E3                <1>  mul ebx
+   187 00000520 01C8                <1>  add eax,ecx
+   187 00000522 EBEF                <1>  jmp short %%ConvertLoop
+   187                              <1>  %%ExitConvertLoop:
+   187 00000524 5F                  <1>  pop edi
+   187 00000525 5E                  <1>  pop esi
+   187 00000526 5B                  <1>  pop ebx
+   188 00000527 A3[23010000]            	MOV [buff2],EAX
+   189                                  	
+   190 0000052C A1[A3000000]            	MOV EAX, [buff1]
+   191 00000531 8B1D[23010000]          	MOV EBX, [buff2]
+   192 00000537 01D8                    	ADD EAX,EBX
+   193                                  		
+   194 00000539 A3[40000000]            	MOV [nhaSIl1], EAX
+   195                                  	int2str [nhaSIl1], shaSIl1
+   195 0000053E 53                  <1>  push ebx
+   195 0000053F 56                  <1>  push esi
+   195 00000540 57                  <1>  push edi
+   195                              <1>  %%start:
+   195 00000541 A1[40000000]        <1>  mov eax, %1
+   195 00000546 31C9                <1>  xor ecx, ecx
+   195 00000548 BB0A000000          <1>  mov ebx, 000Ah
+   195                              <1>  %%DecConvert:
+   195 0000054D 31D2                <1>  xor edx, edx
+   195 0000054F F7F3                <1>  div ebx
+   195 00000551 83C230              <1>  add edx, 0030h
+   195 00000554 52                  <1>  push edx
+   195 00000555 41                  <1>  inc ecx
+   195 00000556 09C0                <1>  or eax, eax
+   195 00000558 75F3                <1>  jnz short %%DecConvert
+   195 0000055A BF[A7050000]        <1>  mov edi, %2
+   195                              <1>  %%SortDec:
+   195 0000055F 58                  <1>  pop eax
+   195 00000560 AA                  <1>  stosb
+   195 00000561 E2FC                <1>  loop %%SortDec
+   195 00000563 B800000000          <1>  mov eax, 0h
+   195 00000568 AA                  <1>  stosb
+   195 00000569 5F                  <1>  pop edi
+   195 0000056A 5E                  <1>  pop esi
+   195 0000056B 5B                  <1>  pop ebx
+   196                                  	SetTextEditBox [hwndEdit3], shaSIl1		
+   196 0000056C 68[A7050000]        <1>  push dword %2
+   196 00000571 FF35[28000000]      <1>  push dword %1
+   196 00000577 FF15[00000000]      <1>  Call [SetWindowTextA]
+   197                                  	SetTextEditBox [hwndEdit4], DefaultValue
+   197 0000057D 68[8C000000]        <1>  push dword %2
+   197 00000582 FF35[2C000000]      <1>  push dword %1
+   197 00000588 FF15[00000000]      <1>  Call [SetWindowTextA]
+   198                                  	
+   199                                  	.CheckButton1:
+   200 0000058E 3DAD080000              	CMP EAX, ButtonID1			;; If it's equal to ButtonID0
+   201 00000593 0F850E010000            	JNZ .CheckButton2
+   202                                  	
+   203 00000599 C1E810                  	SHR EAX, 16					;; Shiftleft 16bit to get Event
+   204 0000059C 83F800                  	CMP EAX, BN_CLICKED			;; If it's Button-Click
+   205 0000059F 0F856A030000            	JNZ .window_default
+   206                                  	
+   207                                  	GetTextEditBox [hwndEdit1], buff1, 128, blen1
+   207 000005A5 66688000            <1>  push word %3
+   207 000005A9 68[A3000000]        <1>  push dword %2
+   207 000005AE FF35[20000000]      <1>  push dword %1
+   207 000005B4 FF15[00000000]      <1>  Call [GetWindowTextA]
+   207 000005BA A3[A3010000]        <1>  mov [%4], eax
+   208                                  	GetTextEditBox [hwndEdit2], buff2, 128, blen2
+   208 000005BF 66688000            <1>  push word %3
+   208 000005C3 68[23010000]        <1>  push dword %2
+   208 000005C8 FF35[24000000]      <1>  push dword %1
+   208 000005CE FF15[00000000]      <1>  Call [GetWindowTextA]
+   208 000005D4 A3[A5010000]        <1>  mov [%4], eax
+   209                                  	str2int buff1
+   209 000005D9 53                  <1>  push ebx
+   209 000005DA 56                  <1>  push esi
+   209 000005DB 57                  <1>  push edi
+   209 000005DC BB00000000          <1>  mov ebx, 0
+   209 000005E1 B900000000          <1>  mov ecx, 0
+   209 000005E6 31C0                <1>  xor eax,eax
+   209 000005E8 BB0A000000          <1>  mov ebx,0000000Ah
+   209 000005ED BE[A3000000]        <1>  mov esi, %1
+   209                              <1>  %%ConvertLoop:
+   209 000005F2 0FB60E              <1>  movzx ecx,byte [esi]
+   209 000005F5 85C9                <1>  test ecx,ecx
+   209 000005F7 740A                <1>  jz short %%ExitConvertLoop
+   209 000005F9 46                  <1>  inc esi
+   209 000005FA 80E930              <1>  sub cl,30h
+   209 000005FD F7E3                <1>  mul ebx
+   209 000005FF 01C8                <1>  add eax,ecx
+   209 00000601 EBEF                <1>  jmp short %%ConvertLoop
+   209                              <1>  %%ExitConvertLoop:
+   209 00000603 5F                  <1>  pop edi
+   209 00000604 5E                  <1>  pop esi
+   209 00000605 5B                  <1>  pop ebx
+   210 00000606 A3[A3000000]            	MOV [buff1], EAX
+   211                                  	str2int buff2
+   211 0000060B 53                  <1>  push ebx
+   211 0000060C 56                  <1>  push esi
+   211 0000060D 57                  <1>  push edi
+   211 0000060E BB00000000          <1>  mov ebx, 0
+   211 00000613 B900000000          <1>  mov ecx, 0
+   211 00000618 31C0                <1>  xor eax,eax
+   211 0000061A BB0A000000          <1>  mov ebx,0000000Ah
+   211 0000061F BE[23010000]        <1>  mov esi, %1
+   211                              <1>  %%ConvertLoop:
+   211 00000624 0FB60E              <1>  movzx ecx,byte [esi]
+   211 00000627 85C9                <1>  test ecx,ecx
+   211 00000629 740A                <1>  jz short %%ExitConvertLoop
+   211 0000062B 46                  <1>  inc esi
+   211 0000062C 80E930              <1>  sub cl,30h
+   211 0000062F F7E3                <1>  mul ebx
+   211 00000631 01C8                <1>  add eax,ecx
+   211 00000633 EBEF                <1>  jmp short %%ConvertLoop
+   211                              <1>  %%ExitConvertLoop:
+   211 00000635 5F                  <1>  pop edi
+   211 00000636 5E                  <1>  pop esi
+   211 00000637 5B                  <1>  pop ebx
+   212 00000638 A3[23010000]            	MOV [buff2], EAX
+   213                                  	
+   214 0000063D A1[A3000000]            	MOV EAX, [buff1]
+   215 00000642 8B1D[23010000]          	MOV EBX, [buff2]
+   216                                  
+   217 00000648 39D8                    	CMP EAX,EBX
+   218 0000064A 0F8CD5020000            	JL .balik
+   219 00000650 29D8                    	SUB EAX,EBX
+   220 00000652 A3[44000000]            	MOV [nhaSIl2],EAX
+   221                                  	int2str [nhaSIl2], shaSIl2
+   221 00000657 53                  <1>  push ebx
+   221 00000658 56                  <1>  push esi
+   221 00000659 57                  <1>  push edi
+   221                              <1>  %%start:
+   221 0000065A A1[44000000]        <1>  mov eax, %1
+   221 0000065F 31C9                <1>  xor ecx, ecx
+   221 00000661 BB0A000000          <1>  mov ebx, 000Ah
+   221                              <1>  %%DecConvert:
+   221 00000666 31D2                <1>  xor edx, edx
+   221 00000668 F7F3                <1>  div ebx
+   221 0000066A 83C230              <1>  add edx, 0030h
+   221 0000066D 52                  <1>  push edx
+   221 0000066E 41                  <1>  inc ecx
+   221 0000066F 09C0                <1>  or eax, eax
+   221 00000671 75F3                <1>  jnz short %%DecConvert
+   221 00000673 BF[A7070000]        <1>  mov edi, %2
+   221                              <1>  %%SortDec:
+   221 00000678 58                  <1>  pop eax
+   221 00000679 AA                  <1>  stosb
+   221 0000067A E2FC                <1>  loop %%SortDec
+   221 0000067C B800000000          <1>  mov eax, 0h
+   221 00000681 AA                  <1>  stosb
+   221 00000682 5F                  <1>  pop edi
+   221 00000683 5E                  <1>  pop esi
+   221 00000684 5B                  <1>  pop ebx
+   222                                  	SetTextEditBox [hwndEdit3], shaSIl2	
+   222 00000685 68[A7070000]        <1>  push dword %2
+   222 0000068A FF35[28000000]      <1>  push dword %1
+   222 00000690 FF15[00000000]      <1>  Call [SetWindowTextA]
+   223                                  	SetTextEditBox [hwndEdit4], DefaultValue
+   223 00000696 68[8C000000]        <1>  push dword %2
+   223 0000069B FF35[2C000000]      <1>  push dword %1
+   223 000006A1 FF15[00000000]      <1>  Call [SetWindowTextA]
+   224                                  	
+   225                                  	.CheckButton2:
+   226 000006A7 3DAE080000              	CMP EAX, ButtonID2
+   227 000006AC 0F8509010000            	JNZ .CheckButton3
+   228                                  
+   229 000006B2 C1E810                  	SHR EAX, 16					;; Shiftleft 16bit to get Event
+   230 000006B5 83F800                  	CMP EAX, BN_CLICKED			;; If it's Button-Click
+   231 000006B8 0F8551020000            	JNZ .window_default
+   232                                  	
+   233                                  	GetTextEditBox [hwndEdit1], buff1, 128, blen1
+   233 000006BE 66688000            <1>  push word %3
+   233 000006C2 68[A3000000]        <1>  push dword %2
+   233 000006C7 FF35[20000000]      <1>  push dword %1
+   233 000006CD FF15[00000000]      <1>  Call [GetWindowTextA]
+   233 000006D3 A3[A3010000]        <1>  mov [%4], eax
+   234                                  	GetTextEditBox [hwndEdit2], buff2, 128, blen2
+   234 000006D8 66688000            <1>  push word %3
+   234 000006DC 68[23010000]        <1>  push dword %2
+   234 000006E1 FF35[24000000]      <1>  push dword %1
+   234 000006E7 FF15[00000000]      <1>  Call [GetWindowTextA]
+   234 000006ED A3[A5010000]        <1>  mov [%4], eax
+   235                                  	str2int buff1
+   235 000006F2 53                  <1>  push ebx
+   235 000006F3 56                  <1>  push esi
+   235 000006F4 57                  <1>  push edi
+   235 000006F5 BB00000000          <1>  mov ebx, 0
+   235 000006FA B900000000          <1>  mov ecx, 0
+   235 000006FF 31C0                <1>  xor eax,eax
+   235 00000701 BB0A000000          <1>  mov ebx,0000000Ah
+   235 00000706 BE[A3000000]        <1>  mov esi, %1
+   235                              <1>  %%ConvertLoop:
+   235 0000070B 0FB60E              <1>  movzx ecx,byte [esi]
+   235 0000070E 85C9                <1>  test ecx,ecx
+   235 00000710 740A                <1>  jz short %%ExitConvertLoop
+   235 00000712 46                  <1>  inc esi
+   235 00000713 80E930              <1>  sub cl,30h
+   235 00000716 F7E3                <1>  mul ebx
+   235 00000718 01C8                <1>  add eax,ecx
+   235 0000071A EBEF                <1>  jmp short %%ConvertLoop
+   235                              <1>  %%ExitConvertLoop:
+   235 0000071C 5F                  <1>  pop edi
+   235 0000071D 5E                  <1>  pop esi
+   235 0000071E 5B                  <1>  pop ebx
+   236 0000071F A3[A3000000]            	MOV [buff1], EAX
+   237                                  	str2int buff2
+   237 00000724 53                  <1>  push ebx
+   237 00000725 56                  <1>  push esi
+   237 00000726 57                  <1>  push edi
+   237 00000727 BB00000000          <1>  mov ebx, 0
+   237 0000072C B900000000          <1>  mov ecx, 0
+   237 00000731 31C0                <1>  xor eax,eax
+   237 00000733 BB0A000000          <1>  mov ebx,0000000Ah
+   237 00000738 BE[23010000]        <1>  mov esi, %1
+   237                              <1>  %%ConvertLoop:
+   237 0000073D 0FB60E              <1>  movzx ecx,byte [esi]
+   237 00000740 85C9                <1>  test ecx,ecx
+   237 00000742 740A                <1>  jz short %%ExitConvertLoop
+   237 00000744 46                  <1>  inc esi
+   237 00000745 80E930              <1>  sub cl,30h
+   237 00000748 F7E3                <1>  mul ebx
+   237 0000074A 01C8                <1>  add eax,ecx
+   237 0000074C EBEF                <1>  jmp short %%ConvertLoop
+   237                              <1>  %%ExitConvertLoop:
+   237 0000074E 5F                  <1>  pop edi
+   237 0000074F 5E                  <1>  pop esi
+   237 00000750 5B                  <1>  pop ebx
+   238 00000751 A3[23010000]            	MOV [buff2], EAX
+   239                                  	
+   240 00000756 A1[A3000000]            	MOV EAX, [buff1]
+   241 0000075B 8B35[23010000]          	MOV ESI, [buff2]
+   242 00000761 31D2                    	XOR EDX, EDX
+   243 00000763 66F7E6                  	MUL SI
+   244                                  	
+   245 00000766 A3[40000000]            	MOV [nhaSIl1], EAX
+   246                                  	int2str [nhaSIl1], shaSIl1
+   246 0000076B 53                  <1>  push ebx
+   246 0000076C 56                  <1>  push esi
+   246 0000076D 57                  <1>  push edi
+   246                              <1>  %%start:
+   246 0000076E A1[40000000]        <1>  mov eax, %1
+   246 00000773 31C9                <1>  xor ecx, ecx
+   246 00000775 BB0A000000          <1>  mov ebx, 000Ah
+   246                              <1>  %%DecConvert:
+   246 0000077A 31D2                <1>  xor edx, edx
+   246 0000077C F7F3                <1>  div ebx
+   246 0000077E 83C230              <1>  add edx, 0030h
+   246 00000781 52                  <1>  push edx
+   246 00000782 41                  <1>  inc ecx
+   246 00000783 09C0                <1>  or eax, eax
+   246 00000785 75F3                <1>  jnz short %%DecConvert
+   246 00000787 BF[A7050000]        <1>  mov edi, %2
+   246                              <1>  %%SortDec:
+   246 0000078C 58                  <1>  pop eax
+   246 0000078D AA                  <1>  stosb
+   246 0000078E E2FC                <1>  loop %%SortDec
+   246 00000790 B800000000          <1>  mov eax, 0h
+   246 00000795 AA                  <1>  stosb
+   246 00000796 5F                  <1>  pop edi
+   246 00000797 5E                  <1>  pop esi
+   246 00000798 5B                  <1>  pop ebx
+   247                                  	SetTextEditBox [hwndEdit3], shaSIl1
+   247 00000799 68[A7050000]        <1>  push dword %2
+   247 0000079E FF35[28000000]      <1>  push dword %1
+   247 000007A4 FF15[00000000]      <1>  Call [SetWindowTextA]
+   248                                  	SetTextEditBox [hwndEdit4], DefaultValue
+   248 000007AA 68[8C000000]        <1>  push dword %2
+   248 000007AF FF35[2C000000]      <1>  push dword %1
+   248 000007B5 FF15[00000000]      <1>  Call [SetWindowTextA]
+   249                                  	
+   250                                  	.CheckButton3:
+   251 000007BB 3DAF080000              	CMP EAX, ButtonID3
+   252 000007C0 0F8549010000            	JNZ .window_default
+   253                                  	
+   254 000007C6 C1E810                  	SHR EAX, 16					;; Shiftleft 16bit to get Event
+   255 000007C9 83F800                  	CMP EAX, BN_CLICKED			;; If it's Button-Click
+   256 000007CC 0F853D010000            	JNZ .window_default
+   257                                  	
+   258                                  	GetTextEditBox [hwndEdit1], buff1, 128, blen1
+   258 000007D2 66688000            <1>  push word %3
+   258 000007D6 68[A3000000]        <1>  push dword %2
+   258 000007DB FF35[20000000]      <1>  push dword %1
+   258 000007E1 FF15[00000000]      <1>  Call [GetWindowTextA]
+   258 000007E7 A3[A3010000]        <1>  mov [%4], eax
+   259                                  	GetTextEditBox [hwndEdit2], buff2, 128, blen2
+   259 000007EC 66688000            <1>  push word %3
+   259 000007F0 68[23010000]        <1>  push dword %2
+   259 000007F5 FF35[24000000]      <1>  push dword %1
+   259 000007FB FF15[00000000]      <1>  Call [GetWindowTextA]
+   259 00000801 A3[A5010000]        <1>  mov [%4], eax
+   260                                  	str2int buff1
+   260 00000806 53                  <1>  push ebx
+   260 00000807 56                  <1>  push esi
+   260 00000808 57                  <1>  push edi
+   260 00000809 BB00000000          <1>  mov ebx, 0
+   260 0000080E B900000000          <1>  mov ecx, 0
+   260 00000813 31C0                <1>  xor eax,eax
+   260 00000815 BB0A000000          <1>  mov ebx,0000000Ah
+   260 0000081A BE[A3000000]        <1>  mov esi, %1
+   260                              <1>  %%ConvertLoop:
+   260 0000081F 0FB60E              <1>  movzx ecx,byte [esi]
+   260 00000822 85C9                <1>  test ecx,ecx
+   260 00000824 740A                <1>  jz short %%ExitConvertLoop
+   260 00000826 46                  <1>  inc esi
+   260 00000827 80E930              <1>  sub cl,30h
+   260 0000082A F7E3                <1>  mul ebx
+   260 0000082C 01C8                <1>  add eax,ecx
+   260 0000082E EBEF                <1>  jmp short %%ConvertLoop
+   260                              <1>  %%ExitConvertLoop:
+   260 00000830 5F                  <1>  pop edi
+   260 00000831 5E                  <1>  pop esi
+   260 00000832 5B                  <1>  pop ebx
+   261 00000833 A3[A3000000]            	MOV [buff1], EAX
+   262                                  	str2int buff2
+   262 00000838 53                  <1>  push ebx
+   262 00000839 56                  <1>  push esi
+   262 0000083A 57                  <1>  push edi
+   262 0000083B BB00000000          <1>  mov ebx, 0
+   262 00000840 B900000000          <1>  mov ecx, 0
+   262 00000845 31C0                <1>  xor eax,eax
+   262 00000847 BB0A000000          <1>  mov ebx,0000000Ah
+   262 0000084C BE[23010000]        <1>  mov esi, %1
+   262                              <1>  %%ConvertLoop:
+   262 00000851 0FB60E              <1>  movzx ecx,byte [esi]
+   262 00000854 85C9                <1>  test ecx,ecx
+   262 00000856 740A                <1>  jz short %%ExitConvertLoop
+   262 00000858 46                  <1>  inc esi
+   262 00000859 80E930              <1>  sub cl,30h
+   262 0000085C F7E3                <1>  mul ebx
+   262 0000085E 01C8                <1>  add eax,ecx
+   262 00000860 EBEF                <1>  jmp short %%ConvertLoop
+   262                              <1>  %%ExitConvertLoop:
+   262 00000862 5F                  <1>  pop edi
+   262 00000863 5E                  <1>  pop esi
+   262 00000864 5B                  <1>  pop ebx
+   263 00000865 A3[23010000]            	MOV [buff2], EAX
+   264                                  	
+   265 0000086A A1[A3000000]            	MOV EAX, [buff1]
+   266 0000086F 8B35[23010000]          	MOV ESI, [buff2]
+   267 00000875 31D2                    	XOR EDX, EDX
+   268 00000877 66F7F6                  	DIV SI
+   269                                  	
+   270 0000087A A3[44000000]            	MOV [nhaSIl2], EAX
+   271 0000087F 8915[40000000]          	MOV [nhaSIl1], EDX
+   272                                  	int2str [nhaSIl2], shaSIl2
+   272 00000885 53                  <1>  push ebx
+   272 00000886 56                  <1>  push esi
+   272 00000887 57                  <1>  push edi
+   272                              <1>  %%start:
+   272 00000888 A1[44000000]        <1>  mov eax, %1
+   272 0000088D 31C9                <1>  xor ecx, ecx
+   272 0000088F BB0A000000          <1>  mov ebx, 000Ah
+   272                              <1>  %%DecConvert:
+   272 00000894 31D2                <1>  xor edx, edx
+   272 00000896 F7F3                <1>  div ebx
+   272 00000898 83C230              <1>  add edx, 0030h
+   272 0000089B 52                  <1>  push edx
+   272 0000089C 41                  <1>  inc ecx
+   272 0000089D 09C0                <1>  or eax, eax
+   272 0000089F 75F3                <1>  jnz short %%DecConvert
+   272 000008A1 BF[A7070000]        <1>  mov edi, %2
+   272                              <1>  %%SortDec:
+   272 000008A6 58                  <1>  pop eax
+   272 000008A7 AA                  <1>  stosb
+   272 000008A8 E2FC                <1>  loop %%SortDec
+   272 000008AA B800000000          <1>  mov eax, 0h
+   272 000008AF AA                  <1>  stosb
+   272 000008B0 5F                  <1>  pop edi
+   272 000008B1 5E                  <1>  pop esi
+   272 000008B2 5B                  <1>  pop ebx
+   273                                  	SetTextEditBox [hwndEdit3], shaSIl2
+   273 000008B3 68[A7070000]        <1>  push dword %2
+   273 000008B8 FF35[28000000]      <1>  push dword %1
+   273 000008BE FF15[00000000]      <1>  Call [SetWindowTextA]
+   274                                  	
+   275                                  	int2str [nhaSIl1],shaSIl1
+   275 000008C4 53                  <1>  push ebx
+   275 000008C5 56                  <1>  push esi
+   275 000008C6 57                  <1>  push edi
+   275                              <1>  %%start:
+   275 000008C7 A1[40000000]        <1>  mov eax, %1
+   275 000008CC 31C9                <1>  xor ecx, ecx
+   275 000008CE BB0A000000          <1>  mov ebx, 000Ah
+   275                              <1>  %%DecConvert:
+   275 000008D3 31D2                <1>  xor edx, edx
+   275 000008D5 F7F3                <1>  div ebx
+   275 000008D7 83C230              <1>  add edx, 0030h
+   275 000008DA 52                  <1>  push edx
+   275 000008DB 41                  <1>  inc ecx
+   275 000008DC 09C0                <1>  or eax, eax
+   275 000008DE 75F3                <1>  jnz short %%DecConvert
+   275 000008E0 BF[A7050000]        <1>  mov edi, %2
+   275                              <1>  %%SortDec:
+   275 000008E5 58                  <1>  pop eax
+   275 000008E6 AA                  <1>  stosb
+   275 000008E7 E2FC                <1>  loop %%SortDec
+   275 000008E9 B800000000          <1>  mov eax, 0h
+   275 000008EE AA                  <1>  stosb
+   275 000008EF 5F                  <1>  pop edi
+   275 000008F0 5E                  <1>  pop esi
+   275 000008F1 5B                  <1>  pop ebx
+   276                                  	SetTextEditBox [hwndEdit4], shaSIl1
+   276 000008F2 68[A7050000]        <1>  push dword %2
+   276 000008F7 FF35[2C000000]      <1>  push dword %1
+   276 000008FD FF15[00000000]      <1>  Call [SetWindowTextA]
+   277                                  	
+   278 00000903 EB0A                    	JMP .window_default
+   279                                  	
+   280                                      .window_destroy: 
+   281 00000905 6A00                            PUSH dword 0 
+   282 00000907 FF15[00000000]                  CALL [PostQuitMessage] 
+   283 0000090D EB77                            JMP finish
+   284                                  
+   285                                      .window_default: 
+   286 0000090F FF7514                          PUSH dword [EBP+20] 
+   287 00000912 FF7510                          PUSH dword [EBP+16] 
+   288 00000915 FF750C                          PUSH dword [EBP+12] 
+   289 00000918 FF7508                          PUSH dword [EBP+08] 
+   290 0000091B FF15[00000000]                  CALL [DefWindowProcA] 
+   291                                  
+   292 00000921 C9                              LEAVE 	;; WindowProcedure() has 4 arguments, 4 bytes each,         
+   293 00000922 C21000                          RET 16	;; so we free 4 * 4 = 16 bytes from the stack, after returning. 
+   294                                  
+   295                                  	.balik:
+   296 00000925 29C3                    		SUB EBX,EAX
+   297 00000927 891D[44000000]          		MOV [nhaSIl2],EBX
+   298                                  		int2str [nhaSIl2],strcopy
+   298 0000092D 53                  <1>  push ebx
+   298 0000092E 56                  <1>  push esi
+   298 0000092F 57                  <1>  push edi
+   298                              <1>  %%start:
+   298 00000930 A1[44000000]        <1>  mov eax, %1
+   298 00000935 31C9                <1>  xor ecx, ecx
+   298 00000937 BB0A000000          <1>  mov ebx, 000Ah
+   298                              <1>  %%DecConvert:
+   298 0000093C 31D2                <1>  xor edx, edx
+   298 0000093E F7F3                <1>  div ebx
+   298 00000940 83C230              <1>  add edx, 0030h
+   298 00000943 52                  <1>  push edx
+   298 00000944 41                  <1>  inc ecx
+   298 00000945 09C0                <1>  or eax, eax
+   298 00000947 75F3                <1>  jnz short %%DecConvert
+   298 00000949 BF[A8090000]        <1>  mov edi, %2
+   298                              <1>  %%SortDec:
+   298 0000094E 58                  <1>  pop eax
+   298 0000094F AA                  <1>  stosb
+   298 00000950 E2FC                <1>  loop %%SortDec
+   298 00000952 B800000000          <1>  mov eax, 0h
+   298 00000957 AA                  <1>  stosb
+   298 00000958 5F                  <1>  pop edi
+   298 00000959 5E                  <1>  pop esi
+   298 0000095A 5B                  <1>  pop ebx
+   299                                  		SetTextEditBox [hwndEdit3], strminus
+   299 0000095B 68[A7090000]        <1>  push dword %2
+   299 00000960 FF35[28000000]      <1>  push dword %1
+   299 00000966 FF15[00000000]      <1>  Call [SetWindowTextA]
+   300 0000096C C3                      		RET
+   301                                  	
+   302                                  	mBoxKonfirmaSI:
+   303 0000096D 6A20                    		PUSH dword 20H			; tombol OK
+   304 0000096F 68[2C000000]            		PUSH dword TitleExit	; judul message box
+   305 00000974 68[33000000]            		PUSH dword ExitBox     	; Pesan yg ditampilkan, diakhiri dengan 0 (null)
+   306 00000979 FF35[08000000]          		PUSH dword [hWind]		; owner windows dari msgbox, atau NULL (tdk punya owner)
+   307 0000097F FF15[00000000]          		CALL [MessageBoxA]
+   308 00000985 C3                      		RET
+   309                                  
+   310                                      finish: 
+   311 00000986 31C0                    		XOR EAX, EAX                  ;; XOR EAX, EAX is a way to clear EAX. 
+   312 00000988 C9                      		LEAVE 
+   313 00000989 C21000                  		RET 16 	

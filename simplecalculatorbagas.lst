@@ -1,0 +1,641 @@
+     1                                  %Include "Calculator.inc"
+     1                              <1> %macro macro_import 2
+     2                              <1> 		import %1 %2
+     3                              <1> 		extern %1
+     4                              <1> %endmacro
+     5                              <1> 
+     6                              <1> ;; Import the Win32 API functions. 
+     7                              <1> macro_import GetModuleHandleA, kernel32.dll 
+     7                              <2>  import %1 %2
+     7                              <2>  extern %1
+     8                              <1> macro_import GetCommandLineA, kernel32.dll 
+     8                              <2>  import %1 %2
+     8                              <2>  extern %1
+     9                              <1> macro_import ExitProcess, kernel32.dll 
+     9                              <2>  import %1 %2
+     9                              <2>  extern %1
+    10                              <1> macro_import MessageBoxA, user32.dll 
+    10                              <2>  import %1 %2
+    10                              <2>  extern %1
+    11                              <1> macro_import LoadIconA, user32.dll 
+    11                              <2>  import %1 %2
+    11                              <2>  extern %1
+    12                              <1> macro_import LoadCursorA, user32.dll 
+    12                              <2>  import %1 %2
+    12                              <2>  extern %1
+    13                              <1> macro_import RegisterClassExA, user32.dll 
+    13                              <2>  import %1 %2
+    13                              <2>  extern %1
+    14                              <1> macro_import CreateWindowExA, user32.dll 
+    14                              <2>  import %1 %2
+    14                              <2>  extern %1
+    15                              <1> macro_import ShowWindow, user32.dll 
+    15                              <2>  import %1 %2
+    15                              <2>  extern %1
+    16                              <1> macro_import UpdateWindow, user32.dll 
+    16                              <2>  import %1 %2
+    16                              <2>  extern %1
+    17                              <1> macro_import GetMessageA, user32.dll 
+    17                              <2>  import %1 %2
+    17                              <2>  extern %1
+    18                              <1> macro_import TranslateMessage, user32.dll 
+    18                              <2>  import %1 %2
+    18                              <2>  extern %1
+    19                              <1> macro_import DispatchMessageA, user32.dll 
+    19                              <2>  import %1 %2
+    19                              <2>  extern %1
+    20                              <1> macro_import PostQuitMessage, user32.dll 
+    20                              <2>  import %1 %2
+    20                              <2>  extern %1
+    21                              <1> macro_import DefWindowProcA, user32.dll 
+    21                              <2>  import %1 %2
+    21                              <2>  extern %1
+    22                              <1> macro_import SetFocus, user32.dll
+    22                              <2>  import %1 %2
+    22                              <2>  extern %1
+    23                              <1> macro_import GetWindowTextA, user32.dll
+    23                              <2>  import %1 %2
+    23                              <2>  extern %1
+    24                              <1> macro_import SetWindowTextA, user32.dll
+    24                              <2>  import %1 %2
+    24                              <2>  extern %1
+    25                              <1> macro_import SendMessageA, user32.dll
+    25                              <2>  import %1 %2
+    25                              <2>  extern %1
+    26                              <1> macro_import BeginPaint, user32.dll
+    26                              <2>  import %1 %2
+    26                              <2>  extern %1
+    27                              <1> macro_import DrawTextA, user32.dll
+    27                              <2>  import %1 %2
+    27                              <2>  extern %1
+    28                              <1> macro_import EndPaint, user32.dll
+    28                              <2>  import %1 %2
+    28                              <2>  extern %1
+    29                              <1> 
+    30                              <1> %macro GetModuleHandle 0
+    31                              <1> 	push dword 0 
+    32                              <1> 	call [GetModuleHandleA] 
+    33                              <1> 	mov dword [hInstance], eax 
+    34                              <1> %endmacro
+    35                              <1> 
+    36                              <1> %macro GetCommandLine 0
+    37                              <1> 	call [GetCommandLineA] 
+    38                              <1> 	mov dword [CommandLine], eax 
+    39                              <1> %endmacro
+    40                              <1> 
+    41                              <1> %macro RegisterClass 0
+    42                              <1>     							;; We need to fill out the WNDCLASSEX structure, now. 
+    43                              <1>     lea ebx, [ebp-48]           ;; We load EBX with the address of our WNDCLASSEX structure. 
+    44                              <1>     mov dword [ebx+00], 48      ;; Offset 00 is the size of the structure. 
+    45                              <1>     mov dword [ebx+04], 3       ;; Offset 04 is the style for the window. 3 is equal to CS_HREDRAW | CS_VREDRAW 
+    46                              <1>     mov dword [ebx+08], WindowProcedure        ;; Offset 08 is the address of our window procedure. 
+    47                              <1>     mov dword [ebx+12], 0       ;; I'm not sure what offset 12 and offset 16 are for. 
+    48                              <1>     mov dword [ebx+16], 0       ;; But I do know that they're supposed to be NULL, at least for now. 
+    49                              <1>     
+    50                              <1>     mov eax, dword [ebp+8]      ;; We load the hInstance value. 
+    51                              <1>     mov dword [ebx+20], eax     ;; Offset 20 is the hInstance value. 
+    52                              <1>     
+    53                              <1>     mov dword [ebx+32], 5 	  	;; Offset 32 is the handle to the background brush. We set that to COLOR_WINDOW
+    54                              <1>     mov dword [ebx+36], 0       ;; Offset 36 is the menu name, what we set to NULL, because we don't have a menu. 
+    55                              <1>     mov dword [ebx+40], ClassName ;; Offset 40 is the class name for our window class. 
+    56                              <1> 								 
+    57                              <1>     push dword 32512 			;; LoadIcon(0, IDI_APPLICATION) where IDI_APPLICATION is equal to 32512.
+    58                              <1>     push dword 0 
+    59                              <1>     call [LoadIconA] 
+    60                              <1> 								;; All Win32 API functions preserve the EBP, EBX, ESI, and EDI registers, so it's 
+    61                              <1> 								;; okay if we use EBX to store the address of the WNDCLASSEX structure, for now. 
+    62                              <1>     
+    63                              <1>     mov dword [ebx+24], eax     ;; Offset 24 is the handle to the icon for our window. 
+    64                              <1>     mov dword [ebx+44], eax     ;; Offset 44 is the handle to the small icon for our window. 
+    65                              <1> 								 
+    66                              <1>     push dword 32512 			;; LoadCursor(0, IDC_ARROW) where IDC_ARROW is equal to 32512.
+    67                              <1>     push dword 0 
+    68                              <1>     call [LoadCursorA] 
+    69                              <1>     
+    70                              <1>     mov dword [ebx+28], eax     ;; Offset 28 is the handle to the cursor for our window. 
+    71                              <1>     
+    72                              <1> 								;; Now we register our window class with Windows, so that we can use the class name 
+    73                              <1> 								;; for our window, when we make that. 
+    74                              <1> 								;; Since EBX already has the address of our WNDCLASSEX structure, we can just pussh 
+    75                              <1> 								;; EBX, so we don't have to reload the address of that structure. 
+    76                              <1>     push ebx 
+    77                              <1>     call [RegisterClassExA] 
+    78                              <1> 
+    79                              <1> %endmacro
+    80                              <1> 
+    81                              <1>     
+    82                              <1> %macro CreateWindow 6
+    83                              <1> 								;; CreateWindowEx(WS_EX_CLIENTEDGE, ClassName, window title, WS_OVERLAPPEDWINDOW,
+    84                              <1> 								;;                x, y, width, height, handle to parent window, 
+    85                              <1> 								;;                handle to menu, hInstance, NULL); 
+    86                              <1>     push dword 0 
+    87                              <1>     push dword [ebp+8] 
+    88                              <1>     push dword 0 
+    89                              <1>     push dword 0 
+    90                              <1>     push dword %6            	;; heigth 
+    91                              <1>     push dword %5              	;; width 
+    92                              <1>     push dword %4        		;; y
+    93                              <1>     push dword %3				;; x
+    94                              <1>     push dword 0x00 | 0xC00000 | 0x80000  | 0x20000 | 0x10000 | 0x40000    
+    95                              <1>                                 ;; WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME  
+    96                              <1>     push dword %2				;; ApplicationName 
+    97                              <1>     push dword %1				;; ClassName 
+    98                              <1>     push dword 0000200h 		;; WS_EX_CLIENTEDGE
+    99                              <1>     call [CreateWindowExA] 
+   100                              <1> 								;; Store the result (which should be a handle to our window) in [ebp-76]. 
+   101                              <1>     mov dword [ebp-76], eax
+   102                              <1> 
+   103                              <1> 	mov dword [hWind], eax		;; Store handle window to hWind
+   104                              <1> 								;; Check if EAX is zero. If so, jump to the error-handling routine. 
+   105                              <1>     sub eax, 0                  ;; The only difference between SUB and CMP is that CMP doesn't store the result in the first operand. 
+   106                              <1>                                 ;; Here we're subtracting 0 from EAX, which won't change EAX, so it doesn't matter if we use SUB. 
+   107                              <1>     jz .new_window_failed 
+   108                              <1>     							;; Now we need to show the window and update the window. 
+   109                              <1>     push dword [ebp+20] 		;; ShowWindow([ebp-76], [ebp+20])
+   110                              <1>     push dword [ebp-76] 
+   111                              <1>     call [ShowWindow] 
+   112                              <1> 								 
+   113                              <1>     push dword [ebp-76] 		;; UpdateWindow([ebp-76])
+   114                              <1>     call [UpdateWindow]   
+   115                              <1> %endmacro
+   116                              <1> 
+   117                              <1> %macro CreateLabel 6
+   118                              <1>     push dword 0 
+   119                              <1>     push dword [hInstance] 		;; hInstance value in [ebp+8]
+   120                              <1>     push dword 0 
+   121                              <1>     push dword [ebp-76]			;; handle to window in [ebp-76] 
+   122                              <1>     push dword %6				;; tinggi= 22 
+   123                              <1>     push dword %5	            ;; lebar = 90
+   124                              <1>     push dword %4				;; y = 50
+   125                              <1>     push dword %3			    ;; x = 55
+   126                              <1>     push dword 0x40000000 | 0x10000000 | 0x0000000B 		
+   127                              <1> 								;; WS_CHILD | WS_VISIBLE | SS_SIMPLE           
+   128                              <1> 	push dword %2				;; LabelText1
+   129                              <1>     push dword LblClassName		;; LblClassName 
+   130                              <1>     push dword 00000200h		;; WS_EX_CLIENTEDGE 
+   131                              <1>     call [CreateWindowExA]
+   132                              <1> 	mov [%1],eax
+   133                              <1> %endmacro
+   134                              <1> 
+   135                              <1> %macro CreateEditBox 7
+   136                              <1>     push dword 0 
+   137                              <1>     push dword [hInstance] 		;; hInstance value in [ebp+8]
+   138                              <1>     push dword %7				;; EditID 
+   139                              <1>     push dword [ebp-76]			;; handle to window in [ebp-76] 
+   140                              <1>     push dword %6				;25			tinggi 
+   141                              <1>     push dword %5				;250        lebar. 
+   142                              <1>     push dword %4				;50			y
+   143                              <1>     push dword %3				;150		x 
+   144                              <1>     push dword 0x40000000 | 0x10000000 
+   145                              <1> 								;;  WS_CHILD  | WS_VISIBLE 
+   146                              <1> 	push dword %2 
+   147                              <1>     push dword EditClassName 
+   148                              <1>     push dword 00000200h		;;WS_EX_CLIENTEDGE 
+   149                              <1>     call [CreateWindowExA]
+   150                              <1> 	mov [%1],eax
+   151                              <1> %endmacro
+   152                              <1> 
+   153                              <1> %macro CreateButton 7
+   154                              <1>     push dword 0 
+   155                              <1>     push dword [hInstance] 		;; hInstance value in [ebp+8]
+   156                              <1>     push dword %7 
+   157                              <1>     push dword [ebp-76]			;; handle to window in [ebp-76] 
+   158                              <1>     push dword %6				;; tinggi 
+   159                              <1>     push dword %5               ;; lebar. 
+   160                              <1>     push dword %4				;; x 
+   161                              <1>     push dword %3			    ;; y 
+   162                              <1>     push dword 0x40000000 | 0x10000000 | 0x1    
+   163                              <1>                                 ;; WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON
+   164                              <1>     push dword %2 
+   165                              <1>     push dword ButtonClassName 
+   166                              <1>     push dword 0 
+   167                              <1>     call [CreateWindowExA]
+   168                              <1> 	mov [%1],eax  
+   169                              <1> %endmacro
+   170                              <1> 
+   171                              <1> %macro GetMessage 0
+   172                              <1>         push dword 0 			;; GetMessage(the MSG structure, 0, 0, 0)
+   173                              <1>         push dword 0 
+   174                              <1>         push dword 0 
+   175                              <1> 		lea ebx, [ebp-72] 
+   176                              <1>         push ebx 
+   177                              <1>         call [GetMessageA] 
+   178                              <1> %endmacro								 
+   179                              <1>  
+   180                              <1> %macro TranslateMsg 0
+   181                              <1>         lea ebx, [ebp-72] 		;; TranslateMessage(the MSG)
+   182                              <1>         push ebx 
+   183                              <1>         call [TranslateMessage] 
+   184                              <1> %endmacro								 
+   185                              <1> 
+   186                              <1> %macro DispatchMsg 0
+   187                              <1>         lea ebx, [ebp-72] 		;; DispatchMessage(the MSG)
+   188                              <1>         push ebx 
+   189                              <1>         call [DispatchMessageA] 
+   190                              <1> %endmacro								 
+   191                              <1> 
+   192                              <1> ;int GetWindowTextA(
+   193                              <1> ;  HWND  hWnd,
+   194                              <1> ;  LPSTR lpString,
+   195                              <1> ;  int   nMaxCount
+   196                              <1> ;)
+   197                              <1> 
+   198                              <1> %macro GetTextEditBox 4
+   199                              <1> 	push word  %3
+   200                              <1> 	push dword %2 
+   201                              <1> 	push dword %1
+   202                              <1> 	Call [GetWindowTextA]
+   203                              <1> 	mov [%4], eax
+   204                              <1> %endmacro
+   205                              <1> 
+   206                              <1> ;BOOL SetWindowTextA(
+   207                              <1> ;  HWND   hWnd,
+   208                              <1> ;  LPCSTR lpString
+   209                              <1> ;);
+   210                              <1> 
+   211                              <1> %macro SetTextEditBox 2
+   212                              <1> 	push dword %2 
+   213                              <1> 	push dword %1
+   214                              <1> 	Call [SetWindowTextA]
+   215                              <1> %endmacro
+   216                              <1> 
+   217                              <1> %macro str2int 1
+   218                              <1>         push    ebx ;
+   219                              <1>         push    esi ;
+   220                              <1>         push    edi ;
+   221                              <1>         mov ebx, 0
+   222                              <1>         mov ecx, 0
+   223                              <1>         xor eax,eax
+   224                              <1>         mov ebx,0000000Ah
+   225                              <1>         mov esi, %1
+   226                              <1>         %%ConvertLoop:
+   227                              <1>         movzx ecx,byte [esi] ;Zeichen laden.
+   228                              <1>         test ecx,ecx
+   229                              <1>         jz  short %%ExitConvertLoop ;0 => Exit
+   230                              <1>         inc esi
+   231                              <1>         sub cl,30h ;0-9...
+   232                              <1>         mul ebx ;Ergebnis * 10
+   233                              <1>         add eax,ecx ;+ nächste Ziffer
+   234                              <1>         jmp short %%ConvertLoop
+   235                              <1>         %%ExitConvertLoop:
+   236                              <1>         pop     edi
+   237                              <1>         pop     esi
+   238                              <1>         pop     ebx
+   239                              <1> %endmacro
+   240                              <1> 
+   241                              <1> %macro int2str 2
+   242                              <1>         push    ebx ;
+   243                              <1>         push    esi ;
+   244                              <1>         push    edi ;
+   245                              <1>         %%start:
+   246                              <1>         mov  eax, %1
+   247                              <1>         xor  ecx, ecx
+   248                              <1>         mov  ebx, 000Ah
+   249                              <1>         %%DecConvert:
+   250                              <1>         xor  edx,  edx
+   251                              <1>         div  ebx
+   252                              <1>         add  edx,  0030h
+   253                              <1>         push edx
+   254                              <1>         inc  ecx
+   255                              <1>         or   eax,  eax
+   256                              <1>         jnz  short %%DecConvert
+   257                              <1>         mov  edi,  %2
+   258                              <1>         %%SortDec:
+   259                              <1>         pop   eax
+   260                              <1>         stosb
+   261                              <1>         loop  %%SortDec
+   262                              <1>         mov eax, 0h
+   263                              <1>         stosb
+   264                              <1>         pop     edi
+   265                              <1>         pop     esi
+   266                              <1>         pop     ebx
+   267                              <1> %endmacro
+   268                              <1> 
+   269                              <1> ;LRESULT SendMessageA(
+   270                              <1> ;  HWND   hWnd,
+   271                              <1> ;  UINT   Msg,
+   272                              <1> ;  WPARAM wParam,
+   273                              <1> ;  LPARAM lParam
+   274                              <1> ;);
+     2                                  
+     3                                  SEGMENT .DATA use32
+     4 00000000 53696D706C65204361-     Title   	db "Simple Calculator",0 
+     4 00000009 6C63756C61746F7200 
+     5                                  
+     6                                       section .data
+     7                                  
+     8                                      ; Messages
+     9                                  
+    10 00000000 0A2D43616C63756C61-         msg1        db      10,'-Calculator-',10,0
+    10 00000009 746F722D0A00       
+    11                                      lmsg1       equ     $ - msg1
+    12                                  
+    13 0000000F 0A4E756D6265722031-         msg2        db      10,'Number 1: ',0
+    13 00000018 3A2000             
+    14                                      lmsg2       equ     $ - msg2
+    15                                  
+    16 0000001B 4E756D62657220323A-         msg3        db      'Number 2: ',0
+    16 00000024 2000               
+    17                                      lmsg3       equ     $ - msg3
+    18                                  
+    19 00000026 0A312E204164640A00          msg4        db      10,'1. Add',10,0
+    20                                      lmsg4       equ     $ - msg4
+    21                                  
+    22 0000002F 322E20537562747261-         msg5        db      '2. Subtract',10,0
+    22 00000038 63740A00           
+    23                                      lmsg5       equ     $ - msg5
+    24                                  
+    25 0000003C 332E204D756C746970-         msg6        db      '3. Multiply',10,0
+    25 00000045 6C790A00           
+    26                                      lmsg6       equ     $ - msg6
+    27                                  
+    28 00000049 342E20446976696465-         msg7        db      '4. Divide',10,0
+    28 00000052 0A00               
+    29                                      lmsg7       equ     $ - msg7
+    30                                  
+    31 00000054 4F7065726174696F6E-         msg8        db      'Operation: ',0
+    31 0000005D 3A2000             
+    32                                      lmsg8       equ     $ - msg8
+    33                                  
+    34 00000060 0A526573756C743A20-         msg9        db      10,'Result: ',0
+    34 00000069 00                 
+    35                                      lmsg9       equ     $ - msg9
+    36                                  
+    37 0000006A 0A496E76616C696420-         msg10       db      10,'Invalid Option',10,0
+    37 00000073 4F7074696F6E0A00   
+    38                                      lmsg10      equ     $ - msg10
+    39                                  
+    40 0000007B 0A0A00                      nlinea      db      10,10,0
+    41                                      lnlinea     equ     $ - nlinea
+    42                                  
+    43                                  section .bss
+    44                                  
+    45                                      ; Spaces reserved for storing the values ​​provided by the user.
+    46                                  
+    47 00000000 <res 00000002>              opc:        resb    2
+    48 00000002 <res 00000002>              num1:       resb    2
+    49 00000004 <res 00000002>              num2:       resb    2
+    50 00000006 <res 00000002>              result:     resb    2
+    51                                  
+    52                                  section .text
+    53                                  
+    54                                      global _start
+    55                                  
+    56                                  _start:
+    57                                  
+    58                                      ; Print on screen the message 1
+    59 00000000 66B804000000                mov eax, 4
+    60 00000006 66BB01000000                mov ebx, 1
+    61 0000000C 66B9[00000000]              mov ecx, msg1
+    62 00000012 66BA0F000000                mov edx, lmsg1
+    63 00000018 CD80                        int 80h
+    64                                  
+    65                                      ; Print on screen the message 2
+    66 0000001A 66B804000000                mov eax, 4
+    67 00000020 66BB01000000                mov ebx, 1
+    68 00000026 66B9[0F000000]              mov ecx, msg2
+    69 0000002C 66BA0C000000                mov edx, lmsg2
+    70 00000032 CD80                        int 80h
+    71                                  
+    72                                      ; We get num1 value.
+    73 00000034 66B803000000                mov eax, 3
+    74 0000003A 66BB00000000                mov ebx, 0
+    75 00000040 66B9[02000000]              mov ecx, num1
+    76 00000046 66BA02000000                mov edx, 2
+    77 0000004C CD80                        int 80h
+    78                                  
+    79                                      ; Print on screen the message 3
+    80 0000004E 66B804000000                mov eax, 4
+    81 00000054 66BB01000000                mov ebx, 1
+    82 0000005A 66B9[1B000000]              mov ecx, msg3
+    83 00000060 66BA0B000000                mov edx, lmsg3
+    84 00000066 CD80                        int 80h
+    85                                  
+    86                                      ; We get num2 value.
+    87 00000068 66B803000000                mov eax, 3
+    88 0000006E 66BB00000000                mov ebx, 0
+    89 00000074 66B9[04000000]              mov ecx, num2
+    90 0000007A 66BA02000000                mov edx, 2
+    91 00000080 CD80                        int 80h
+    92                                  
+    93                                      ; Print on screen the message 4
+    94 00000082 66B804000000                mov eax, 4
+    95 00000088 66BB01000000                mov ebx, 1
+    96 0000008E 66B9[26000000]              mov ecx, msg4
+    97 00000094 66BA09000000                mov edx, lmsg4
+    98 0000009A CD80                        int 80h
+    99                                  
+   100                                      ; Print on screen the message 5
+   101 0000009C 66B804000000                mov eax, 4
+   102 000000A2 66BB01000000                mov ebx, 1
+   103 000000A8 66B9[2F000000]              mov ecx, msg5
+   104 000000AE 66BA0D000000                mov edx, lmsg5
+   105 000000B4 CD80                        int 80h
+   106                                  
+   107                                      ; Print on screen the message 6
+   108 000000B6 66B804000000                mov eax, 4
+   109 000000BC 66BB01000000                mov ebx, 1
+   110 000000C2 66B9[3C000000]              mov ecx, msg6
+   111 000000C8 66BA0D000000                mov edx, lmsg6
+   112 000000CE CD80                        int 80h
+   113                                  
+   114                                      ; Print on screen the message 7
+   115 000000D0 66B804000000                mov eax, 4
+   116 000000D6 66BB01000000                mov ebx, 1
+   117 000000DC 66B9[49000000]              mov ecx, msg7
+   118 000000E2 66BA0B000000                mov edx, lmsg7
+   119 000000E8 CD80                        int 80h
+   120                                  
+   121                                      ; Print on screen the message 8
+   122 000000EA 66B804000000                mov eax, 4
+   123 000000F0 66BB01000000                mov ebx, 1
+   124 000000F6 66B9[54000000]              mov ecx, msg8
+   125 000000FC 66BA0C000000                mov edx, lmsg8
+   126 00000102 CD80                        int 80h
+   127                                  
+   128                                      ; We get the option selected.
+   129 00000104 66BB00000000                mov ebx,0
+   130 0000010A 66B9[00000000]              mov ecx,opc
+   131 00000110 66BA02000000                mov edx,2
+   132 00000116 66B803000000                mov eax,3
+   133 0000011C CD80                        int 80h
+   134                                  
+   135 0000011E 8A26[0000]                  mov ah, [opc]       ; Move the selected option to the registry ah
+   136 00000122 80EC30                      sub ah, '0'     ; Convert from ascii to decimal
+   137                                  
+   138                                      ; We compare the value entered by the user to know what operation to perform.
+   139                                  
+   140 00000125 80FC01                      cmp ah, 1
+   141 00000128 7430                        je add
+   142 0000012A 80FC02                      cmp ah, 2
+   143 0000012D 7475                        je subtract
+   144 0000012F 80FC03                      cmp ah, 3
+   145 00000132 0F84B800                    je multiply
+   146 00000136 80FC04                      cmp ah, 4
+   147 00000139 0F84FB00                    je divide
+   148                                  
+   149                                      ; If the value entered by the user does not meet any of the above
+   150                                      ; conditions then we show an error message and we close the program.
+   151 0000013D 66B804000000                mov eax, 4
+   152 00000143 66BB01000000                mov ebx, 1
+   153 00000149 66B9[6A000000]              mov ecx, msg10
+   154 0000014F 66BA11000000                mov edx, lmsg10
+   155 00000155 CD80                        int 80h
+   156                                  
+   157 00000157 E92D01                      jmp exit
+   158                                  
+   159                                  add:
+   160                                      ; We keep the numbers in the registers al and bl
+   161 0000015A A0[0200]                    mov al, [num1]
+   162 0000015D 8A1E[0400]                  mov bl, [num2]
+   163                                  
+   164                                      ; Convert from ascii to decimal
+   165 00000161 2C30                        sub al, '0'
+   166 00000163 80EB30                      sub bl, '0'
+   167                                  
+   168                                      ; Add
+   169 00000166 00D8                        add al, bl
+   170                                  
+   171                                      ; Conversion from decimal to ascii
+   172 00000168 0430                        add al, '0'
+   173                                  
+   174                                      ; We move the result
+   175 0000016A A2[0600]                    mov [result], al
+   176                                  
+   177                                      ; Print on screen the message 9
+   178 0000016D 66B804000000                mov eax, 4
+   179 00000173 66BB01000000                mov ebx, 1
+   180 00000179 66B9[60000000]              mov ecx, msg9
+   181 0000017F 66BA0A000000                mov edx, lmsg9
+   182 00000185 CD80                        int 80h
+   183                                  
+   184                                      ; Print on screen the result
+   185 00000187 66B804000000                mov eax, 4
+   186 0000018D 66BB01000000                mov ebx, 1
+   187 00000193 66B9[06000000]              mov ecx, result
+   188 00000199 66BA02000000                mov edx, 2
+   189 0000019F CD80                        int 80h
+   190                                  
+   191                                      ; We end the program
+   192 000001A1 E9E300                      jmp exit
+   193                                  
+   194                                  subtract:
+   195                                      ; We keep the numbers in the registers al and bl
+   196 000001A4 A0[0200]                    mov al, [num1]
+   197 000001A7 8A1E[0400]                  mov bl, [num2]
+   198                                  
+   199                                      ; Convert from ascii to decimal
+   200 000001AB 2C30                        sub al, '0'
+   201 000001AD 80EB30                      sub bl, '0'
+   202                                  
+   203                                      ; Subtract
+   204 000001B0 28D8                        sub al, bl
+   205                                  
+   206                                      ; Conversion from decimal to ascii
+   207 000001B2 0430                        add al, '0'
+   208                                  
+   209                                      ; We move the result
+   210 000001B4 A2[0600]                    mov [result], al
+   211                                  
+   212                                      ; Print on screen the message 9
+   213 000001B7 66B804000000                mov eax, 4
+   214 000001BD 66BB01000000                mov ebx, 1
+   215 000001C3 66B9[60000000]              mov ecx, msg9
+   216 000001C9 66BA0A000000                mov edx, lmsg9
+   217 000001CF CD80                        int 80h
+   218                                  
+   219                                      ; Print on screen the result
+   220 000001D1 66B804000000                mov eax, 4
+   221 000001D7 66BB01000000                mov ebx, 1
+   222 000001DD 66B9[06000000]              mov ecx, result
+   223 000001E3 66BA01000000                mov edx, 1
+   224 000001E9 CD80                        int 80h
+   225                                  
+   226                                      ; We end the program
+   227 000001EB E99900                      jmp exit
+   228                                  
+   229                                  multiply:
+   230                                  
+   231                                      ; We store the numbers in registers al and bl
+   232 000001EE A0[0200]                    mov al, [num1]
+   233 000001F1 8A1E[0400]                  mov bl, [num2]
+   234                                  
+   235                                      ; Convert from ascii to decimal
+   236 000001F5 2C30                        sub al, '0'
+   237 000001F7 80EB30                      sub bl, '0'
+   238                                  
+   239                                      ; Multiply. AX = AL x BL
+   240 000001FA F6E3                        mul bl
+   241                                  
+   242                                      ; Conversion from decimal to ascii
+   243 000001FC 83C030                      add ax, '0'
+   244                                  
+   245                                      ; We move the result
+   246 000001FF A3[0600]                    mov [result], ax
+   247                                  
+   248                                      ; Print on screen the message 9
+   249 00000202 66B804000000                mov eax, 4
+   250 00000208 66BB01000000                mov ebx, 1
+   251 0000020E 66B9[60000000]              mov ecx, msg9
+   252 00000214 66BA0A000000                mov edx, lmsg9
+   253 0000021A CD80                        int 80h
+   254                                  
+   255                                      ; Print on screen the result
+   256 0000021C 66B804000000                mov eax, 4
+   257 00000222 66BB01000000                mov ebx, 1
+   258 00000228 66B9[06000000]              mov ecx, result
+   259 0000022E 66BA01000000                mov edx, 1
+   260 00000234 CD80                        int 80h
+   261                                  
+   262                                      ; We end the program
+   263 00000236 EB4F                        jmp exit
+   264                                  
+   265                                  divide:
+   266                                  
+   267                                      ; We store the numbers in registers ax and bx
+   268 00000238 A0[0200]                    mov al, [num1]
+   269 0000023B 8A1E[0400]                  mov bl, [num2]
+   270                                  
+   271 0000023F BA0000                      mov dx, 0
+   272 00000242 B400                        mov ah, 0
+   273                                  
+   274                                      ; Convert from ascii to decimall
+   275 00000244 2C30                        sub al, '0'
+   276 00000246 80EB30                      sub bl, '0'
+   277                                  
+   278                                      ; Division. AL = AX / BX
+   279 00000249 F6F3                        div bl
+   280                                  
+   281                                      ; Conversion from decimal to ascii
+   282 0000024B 83C030                      add ax, '0'
+   283                                      ; We move the result
+   284 0000024E A3[0600]                    mov [result], ax
+   285                                  
+   286                                      ; Print on screen the message 9
+   287 00000251 66B804000000                mov eax, 4
+   288 00000257 66BB01000000                mov ebx, 1
+   289 0000025D 66B9[60000000]              mov ecx, msg9
+   290 00000263 66BA0A000000                mov edx, lmsg9
+   291 00000269 CD80                        int 80h
+   292                                  
+   293                                      ; Print on screen the result
+   294 0000026B 66B804000000                mov eax, 4
+   295 00000271 66BB01000000                mov ebx, 1
+   296 00000277 66B9[06000000]              mov ecx, result
+   297 0000027D 66BA01000000                mov edx, 1
+   298 00000283 CD80                        int 80h
+   299                                  
+   300                                      ; We end the program
+   301 00000285 EB00                        jmp exit
+   302                                  
+   303                                  exit:
+   304                                      ; Print on screen two new lines
+   305 00000287 66B804000000                mov eax, 4
+   306 0000028D 66BB01000000                mov ebx, 1
+   307 00000293 66B9[7B000000]              mov ecx, nlinea
+   308 00000299 66BA03000000                mov edx, lnlinea
+   309 0000029F CD80                        int 80h
+   310                                      ; End the program
+   311 000002A1 66B801000000                mov eax, 1
+   312 000002A7 66BB00000000                mov ebx, 0
+   313 000002AD CD80                        int 80h

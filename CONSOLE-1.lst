@@ -1,0 +1,71 @@
+     1                                  ; Definisi Fungsi Di-import Dari file DLL
+     2                                  extern ExitProcess 
+     3                                  extern GetStdHandle 
+     4                                  extern WriteFile 
+     5                                  extern AllocConsole 
+     6                                  extern FreeConsole 
+     7                                  extern SetConsoleTitleA 
+     8                                  extern Sleep 
+     9                                  
+    10                                  import ExitProcess kernel32.dll 
+    11                                  import GetStdHandle kernel32.dll 
+    12                                  import WriteFile kernel32.dll 
+    13                                  import ReadFile kernel32.dll 
+    14                                  import AllocConsole kernel32.dll 
+    15                                  import FreeConsole kernel32.dll 
+    16                                  import SetConsoleTitleA kernel32.dll 
+    17                                  import Sleep kernel32.dll 
+    18                                  
+    19                                  section .DATA 		
+    20                                  
+    21 00000000 4D454E414D50494C4B-     Judul       db "MENAMPILKAN PESAN PADA CONSOLE", 0 
+    21 00000009 414E20504553414E20-
+    21 00000012 5041444120434F4E53-
+    21 0000001B 4F4C4500           
+    22 0000001F 0D0A50524F4752414D-     Pesan1      db 13,10,"PROGRAM ASSEMBLY NASM ", 13,10,0 
+    22 00000028 20415353454D424C59-
+    22 00000031 204E41534D200D0A00 
+    23 0000003A 1B000000                Panjang1	dd $-Pesan1 
+    24 0000003E 0D0A54756E67677520-     Pesan2		db 13,10,"Tunggu 10 detik ..........", 13,10,0 
+    24 00000047 313020646574696B20-
+    24 00000050 2E2E2E2E2E2E2E2E2E-
+    24 00000059 2E0D0A00           
+    25 0000005D 1F000000                Panjang2    dd $-Pesan2 
+    26                                  
+    27 00000061 <res 00000004>          hStdOut     resd 1 
+    28 00000065 <res 00000004>          nBytes      resd 1
+    29                                  
+    30                                  section .CODE use32 
+    31                                  ..start: 
+    32                                  
+    33 00000000 FF15[00000000]          	call [AllocConsole] 
+    34                                  
+    35 00000006 68[00000000]            	push dword Judul 
+    36 0000000B FF15[00000000]          	call [SetConsoleTitleA] 
+    37                                  
+    38 00000011 6AF5                    	push dword -11 				;; STD_OUTPUT_HANDLE = -11.
+    39 00000013 FF15[00000000]          	call [GetStdHandle] 
+    40 00000019 A3[61000000]            	mov dword [hStdOut], eax 
+    41                                  								;; menampilkan Teks ke Console(Monitor) dg WriteFile
+    42 0000001E 6A00                    	push dword 0 				;; parameter ke 5 dari WriteFile() adalah 0 
+    43 00000020 68[65000000]            	push dword nBytes			;; parameter ke 4 jumlah byte yg sesungguhnya tertulis
+    44 00000025 FF35[3A000000]          	push dword [Panjang1] 		;; parameter ke 3 panjang string
+    45 0000002B 68[1F000000]            	push dword Pesan1			;; parameter ke 2 string yang akan ditampilkan "Tulis Kalimat : "
+    46 00000030 FF35[61000000]          	push dword [hStdOut] 		;; parameter ke 1 handle stdout
+    47 00000036 FF15[00000000]          	call [WriteFile] 				
+    48                                  
+    49 0000003C 6A00                    	push dword 0 
+    50 0000003E 68[65000000]            	push dword nBytes 
+    51 00000043 FF35[5D000000]          	push dword [Panjang2] 
+    52 00000049 68[3E000000]            	push dword Pesan2 			;;parameter ke 2 string "Tunggu 10 detik ...................."
+    53 0000004E FF35[61000000]          	push dword [hStdOut] 
+    54 00000054 FF15[00000000]          	call [WriteFile] 
+    55                                  
+    56 0000005A 6810270000              	push dword 10000 			;; delay 10 second 
+    57 0000005F FF15[00000000]          	call [Sleep] 
+    58                                  
+    59 00000065 FF15[00000000]          	call [FreeConsole] 
+    60                                  
+    61 0000006B 6A00                    	push 0 
+    62 0000006D FF15[00000000]          	call [ExitProcess] 
+    63                                  

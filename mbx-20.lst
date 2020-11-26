@@ -1,0 +1,31 @@
+     1                                  IMPORT MessageBoxA user32.dll
+     2                                  IMPORT ExitProcess kernel32.dll
+     3                                  EXTERN MessageBoxA	
+     4                                  EXTERN ExitProcess	
+     5                                  
+     6                                  segment .code use32
+     7                                  ..start:	
+     8                                  
+     9 00000000 6A20                     push dword 20h			; Button OK | Icon Question
+    10 00000002 68[3E000000]             push dword title1		
+    11 00000007 68[00000000]             push dword string1     
+    12 0000000C 6A00                     push dword 0
+    13 0000000E FF15[00000000]           call [MessageBoxA]
+    14                                  
+    15 00000014 6A00                     push dword 0
+    16 00000016 FF15[00000000]           call [ExitProcess]
+    17 0000001C C9                       leave
+    18 0000001D C3                      ret
+    19                                  
+    20                                  segment .data use32
+    21 00000000 446973706C6179206D-     string1: db 'Display message on MessageBox',13,10,
+    21 00000009 657373616765206F6E-
+    21 00000012 204D65737361676542-
+    21 0000001B 6F780D0A           
+    22 0000001F 5573696E672057696E-              db 'Using WindowsAPI [MessageBoxA]',0
+    22 00000028 646F7773415049205B-
+    22 00000031 4D657373616765426F-
+    22 0000003A 78415D00           
+    23 0000003E 417373656D626C7920-     title1:  db 'Assembly MsgBox',0
+    23 00000047 4D7367426F7800     
+    24                                   

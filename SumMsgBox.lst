@@ -1,0 +1,246 @@
+     1                                  %INCLUDE "winAPI.inc"		;;Declare external procedure {winapi}
+     1                              <1> extern ExitProcess
+     2                              <1> extern AllocConsole 
+     3                              <1> extern FreeConsole 
+     4                              <1> extern SetConsoleTitleA 
+     5                              <1> extern Sleep 
+     6                              <1> extern GetStdHandle
+     7                              <1> extern ReadFile
+     8                              <1> extern WriteFile
+     9                              <1> EXTERN MessageBoxA	
+    10                              <1> 
+    11                              <1> import ExitProcess		kernel32.dll
+    12                              <1> import AllocConsole		kernel32.dll 
+    13                              <1> import FreeConsole		kernel32.dll 
+    14                              <1> import SetConsoleTitleA	kernel32.dll 
+    15                              <1> import Sleep 			kernel32.dll
+    16                              <1> import GetStdHandle 	kernel32.dll
+    17                              <1> import ReadFile			kernel32.dll
+    18                              <1> import WriteFile		kernel32.dll
+    19                              <1> IMPORT MessageBoxA 		user32.dll
+     2                                  %INCLUDE "Console1.mac"		;;Macro definition
+     1                              <1> %macro NewConsole 3
+     2                              <1> 	
+     3                              <1> 	call [AllocConsole] 
+     4                              <1> 
+     5                              <1> 	push dword %1 
+     6                              <1> 	call [SetConsoleTitleA] 
+     7                              <1> 
+     8                              <1> 	push dword -11 				
+     9                              <1> 	call [GetStdHandle] 
+    10                              <1> 	mov dword [%2], eax 
+    11                              <1> 
+    12                              <1> 	push dword -10				 
+    13                              <1> 	call [GetStdHandle] 
+    14                              <1> 	mov dword [%3], eax 
+    15                              <1> 
+    16                              <1> %endmacro
+    17                              <1> 
+    18                              <1> %macro QuitConsole 0
+    19                              <1> 	call [FreeConsole] 
+    20                              <1> 	xor eax, eax 
+    21                              <1> 	push eax 
+    22                              <1> 	call [ExitProcess]
+    23                              <1> %endmacro
+    24                              <1> 
+    25                              <1> %macro Wait 1
+    26                              <1> 	push dword %1*1000 		;; delay %1/1000 second 
+    27                              <1> 	call [Sleep] 
+    28                              <1> %endmacro
+    29                              <1> 
+    30                              <1> %macro DisplayText 4
+    31                              <1> 	push dword 0 				
+    32                              <1> 	push dword %4				
+    33                              <1> 	push dword [%3] 			
+    34                              <1> 	push dword %2				
+    35                              <1> 	push dword [%1] 			
+    36                              <1> 	call [WriteFile] 
+    37                              <1> %endmacro
+    38                              <1> 
+    39                              <1> %macro GetText 4
+    40                              <1> 	push dword 0 		
+    41                              <1> 	push dword %4 		
+    42                              <1> 	push dword [%3] 	
+    43                              <1> 	push dword %2 		
+    44                              <1> 	push dword [%1] 	
+    45                              <1> 	call [ReadFile] 			
+    46                              <1> %endmacro
+     3                                  
+     4                                  SEGMENT .DATA use32
+     5 00000000 546573742050757270-     Title   	db "Test Purposes",0 
+     5 00000009 6F73657300         
+     6                                  
+     7 0000000E 0D0A0D0A496E707574-     msg1 		db 13,10,13,10,"Input number (sum < 65536) (just press enter to sum)",13,10
+     7 00000017 206E756D6265722028-
+     7 00000020 73756D203C20363535-
+     7 00000029 33362920286A757374-
+     7 00000032 20707265737320656E-
+     7 0000003B 74657220746F207375-
+     7 00000044 6D290D0A           
+     8 00000048 3A000000                msg1_len 	dd $-msg1		
+     9 0000004C 0D0A0D0A53756D3A20-     msg2 		db 13,10,13,10,"Sum: ",0
+     9 00000055 00                 
+    10 00000056 0A000000                msg2_len 	dd $-msg2	
+    11                                  
+    12                                  
+    13 0000005A <res 000000FF>          buff		resb 255
+    14 00000159 FF000000                buff_len	dd 255
+    15                                  
+    16 0000015D 20202020202000          strhasil	db '      ',0
+    17 00000164 06                      str_len		db 6   
+    18                                  
+    19                                  
+    20                                  SEGMENT .BSS  use32
+    21 00000000 <res 00000004>          hStdOut		resd 1 
+    22 00000004 <res 00000004>          hStdIn		resd 1 
+    23 00000008 <res 00000004>          nBytes		resd 1
+    24 0000000C <res 00000004>          iBytes		resd 1
+    25 00000010 <res 00000004>          rBytes		resd 1
+    26 00000014 <res 00000004>          num			resd 1
+    27                                  
+    28                                  SEGMENT .CODE use32
+    29                                  ..start:
+    30                                  
+    31                                  NewConsole 	Title, hStdOut, hStdIn
+    31                              <1> 
+    31 00000000 FF15[00000000]      <1>  call [AllocConsole]
+    31                              <1> 
+    31 00000006 68[00000000]        <1>  push dword %1
+    31 0000000B FF15[00000000]      <1>  call [SetConsoleTitleA]
+    31                              <1> 
+    31 00000011 6AF5                <1>  push dword -11
+    31 00000013 FF15[00000000]      <1>  call [GetStdHandle]
+    31 00000019 A3[00000000]        <1>  mov dword [%2], eax
+    31                              <1> 
+    31 0000001E 6AF6                <1>  push dword -10
+    31 00000020 FF15[00000000]      <1>  call [GetStdHandle]
+    31 00000026 A3[04000000]        <1>  mov dword [%3], eax
+    31                              <1> 
+    32                                  
+    33                                  Again:
+    34 0000002B B800000000              mov eax,0
+    35 00000030 A3[14000000]            mov [num],eax
+    36                                  
+    37                                  DisplayText	hStdOut, msg1, msg1_len, nBytes
+    37 00000035 6A00                <1>  push dword 0
+    37 00000037 68[08000000]        <1>  push dword %4
+    37 0000003C FF35[48000000]      <1>  push dword [%3]
+    37 00000042 68[0E000000]        <1>  push dword %2
+    37 00000047 FF35[00000000]      <1>  push dword [%1]
+    37 0000004D FF15[00000000]      <1>  call [WriteFile]
+    38                                  
+    39                                  again1:
+    40                                  GetText		hStdIn, buff, buff_len, iBytes
+    40 00000053 6A00                <1>  push dword 0
+    40 00000055 68[0C000000]        <1>  push dword %4
+    40 0000005A FF35[59010000]      <1>  push dword [%3]
+    40 00000060 68[5A000000]        <1>  push dword %2
+    40 00000065 FF35[04000000]      <1>  push dword [%1]
+    40 0000006B FF15[00000000]      <1>  call [ReadFile]
+    41                                  
+    42 00000071 833D[0C000000]02        CMP dword [iBytes],2    ;; if just Enter (2 char) then Exit
+    43 00000078 7407                    JE  Exitloop
+    44                                  
+    45 0000007A E849000000              CALL Str2Numeric
+    46 0000007F EBD2                    jmp again1
+    47                                  
+    48                                  Exitloop:
+    49 00000081 E87D000000              CALL Numeric2StrT
+    50                                  
+    51                                  DisplayText	hStdOut, msg2, msg2_len, nBytes
+    51 00000086 6A00                <1>  push dword 0
+    51 00000088 68[08000000]        <1>  push dword %4
+    51 0000008D FF35[56000000]      <1>  push dword [%3]
+    51 00000093 68[4C000000]        <1>  push dword %2
+    51 00000098 FF35[00000000]      <1>  push dword [%1]
+    51 0000009E FF15[00000000]      <1>  call [WriteFile]
+    52                                  DisplayText	hStdOut, strhasil, str_len, nBytes
+    52 000000A4 6A00                <1>  push dword 0
+    52 000000A6 68[08000000]        <1>  push dword %4
+    52 000000AB FF35[64010000]      <1>  push dword [%3]
+    52 000000B1 68[5D010000]        <1>  push dword %2
+    52 000000B6 FF35[00000000]      <1>  push dword [%1]
+    52 000000BC FF15[00000000]      <1>  call [WriteFile]
+    53                                  
+    54 000000C2 E964FFFFFF              JMP Again
+    55                                  	
+    56 000000C7 C3                      RET
+    57                                  
+    58                                  ; CONVERT STRING (buff) TO Numeric (rBytes)
+    59                                  ;-------------------------------------------------------------------------------------
+    60                                  Str2Numeric:
+    61 000000C8 8B0D[0C000000]          	mov ecx, [iBytes]
+    62 000000CE BE[5A000000]            	mov esi, dword buff
+    63 000000D3 83E902                  	sub ecx, 2
+    64                                  	
+    65                                  	loop:
+    66 000000D6 0FB606                  		movzx eax, byte[esi]
+    67 000000D9 83E830                  		sub eax, '0'
+    68 000000DC 89CB                    		mov ebx, ecx
+    69 000000DE 49                      		dec ecx
+    70 000000DF 83F900                  		cmp ecx,0
+    71 000000E2 7410                    		je fin
+    72                                  		mult:
+    73 000000E4 6BC00A                  			imul eax,10
+    74 000000E7 E2FB                    			loop mult
+    75 000000E9 89D9                    		mov ecx, ebx
+    76 000000EB 0105[14000000]          		add [num], eax
+    77 000000F1 46                      		inc esi
+    78 000000F2 E2E2                    		loop loop
+    79                                  		
+    80                                  	fin:
+    81 000000F4 0105[14000000]          		add [num],eax
+    82 000000FA C3                      ret
+    83                                  
+    84                                  ;other version
+    85                                  ;Str2Numeric:
+    86                                  ;	xor eax,eax
+    87                                  ;	mov esi, 10
+    88                                  ;	mov ebx, buff
+    89                                  ;	mov ecx, [iBytes]
+    90                                  ;	sub ecx, 2
+    91                                  ;	xor edx, edx
+    92                                  ;	
+    93                                  ;	loopnum:
+    94                                  ;		mul esi
+    95                                  ;		mov dl, byte[ebx]
+    96                                  ;		sub dl, 0x30
+    97                                  ;		add eax, edx
+    98                                  ;		inc ebx
+    99                                  ;		loop loopnum
+   100                                  ;		
+   101                                  ;	mov [num], eax
+   102                                  ;ret
+   103                                  
+   104                                  ; CONVERT STRING (buff) TO Numeric (rBytes)
+   105                                  ;-------------------------------------------------------------------------------------
+   106                                  resetS2N:
+   107 000000FB A1[14000000]            	mov eax, [num]
+   108 00000100 31C0                    	xor eax, eax
+   109                                  	
+   110 00000102 C3                      ret
+   111                                  ; CONVERT Numeric (iBytes) TO STRING (strhasil) 
+   112                                  ;-------------------------------------------------------------------------------------
+   113                                  Numeric2StrT: 
+   114 00000103 BB[5D010000]            	mov ebx, strhasil
+   115 00000108 A1[14000000]            	mov eax, [num]
+   116 0000010D 66BE0A00                	mov si, 10
+   117                                  
+   118                                  loop1:				
+   119 00000111 43                      	inc ebx				;; ebx digunakan sebagai pointer ke strhasil
+   120 00000112 803B00                  	cmp byte[ebx],0		;; diposisikan pada akhir string strhasil 
+   121 00000115 75FA                    	jne loop1		
+   122                                  	
+   123 00000117 4B                      	dec ebx
+   124                                  
+   125                                  loop2:				
+   126 00000118 31D2                    	xor edx, edx		;; edx di-nolkan untuk menampung sisa bagi
+   127 0000011A 66F7F6                  	div si				;; dilakukan pembagian 10 berulang
+   128 0000011D 80C230                  	add dl, '0'        	;; sisa bagi pada edx (dl) di ubah ke character
+   129 00000120 8813                    	mov [ebx], dl		;; simpan ke strhasil dari belakang ke depan
+   130 00000122 4B                      	dec ebx				;; majukan pointer
+   131 00000123 09C0                    	or  eax,eax			;; test apakah yang dibagi sudah nol
+   132 00000125 75F1                    	jnz loop2 			;; selesai perulangan jika yang dibagi sdh nol   
+   133                                  
+   134 00000127 C3                      ret
+   135                                  

@@ -1,0 +1,253 @@
+     1                                  %INCLUDE "winAPI.inc"		;;Declare external procedure {winapi}
+     1                              <1> extern ExitProcess
+     2                              <1> extern AllocConsole 
+     3                              <1> extern FreeConsole 
+     4                              <1> extern SetConsoleTitleA 
+     5                              <1> extern Sleep 
+     6                              <1> extern GetStdHandle
+     7                              <1> extern ReadFile
+     8                              <1> extern WriteFile
+     9                              <1> EXTERN MessageBoxA	
+    10                              <1> 
+    11                              <1> import ExitProcess		kernel32.dll
+    12                              <1> import AllocConsole		kernel32.dll 
+    13                              <1> import FreeConsole		kernel32.dll 
+    14                              <1> import SetConsoleTitleA	kernel32.dll 
+    15                              <1> import Sleep 			kernel32.dll
+    16                              <1> import GetStdHandle 	kernel32.dll
+    17                              <1> import ReadFile			kernel32.dll
+    18                              <1> import WriteFile		kernel32.dll
+    19                              <1> IMPORT MessageBoxA 		user32.dll
+     2                                  %INCLUDE "Console1.mac"		;;Macro definition
+     1                              <1> %macro NewConsole 3
+     2                              <1> 	
+     3                              <1> 	call [AllocConsole] 
+     4                              <1> 
+     5                              <1> 	push dword %1 
+     6                              <1> 	call [SetConsoleTitleA] 
+     7                              <1> 
+     8                              <1> 	push dword -11 				
+     9                              <1> 	call [GetStdHandle] 
+    10                              <1> 	mov dword [%2], eax 
+    11                              <1> 
+    12                              <1> 	push dword -10				 
+    13                              <1> 	call [GetStdHandle] 
+    14                              <1> 	mov dword [%3], eax 
+    15                              <1> 
+    16                              <1> %endmacro
+    17                              <1> 
+    18                              <1> %macro QuitConsole 0
+    19                              <1> 	call [FreeConsole] 
+    20                              <1> 	xor eax, eax 
+    21                              <1> 	push eax 
+    22                              <1> 	call [ExitProcess]
+    23                              <1> %endmacro
+    24                              <1> 
+    25                              <1> %macro Wait 1
+    26                              <1> 	push dword %1*1000 		;; delay %1/1000 second 
+    27                              <1> 	call [Sleep] 
+    28                              <1> %endmacro
+    29                              <1> 
+    30                              <1> %macro DisplayText 4
+    31                              <1> 	push dword 0 				
+    32                              <1> 	push dword %4				
+    33                              <1> 	push dword [%3] 			
+    34                              <1> 	push dword %2				
+    35                              <1> 	push dword [%1] 			
+    36                              <1> 	call [WriteFile] 
+    37                              <1> %endmacro
+    38                              <1> 
+    39                              <1> %macro GetText 4
+    40                              <1> 	push dword 0 		
+    41                              <1> 	push dword %4 		
+    42                              <1> 	push dword [%3] 	
+    43                              <1> 	push dword %2 		
+    44                              <1> 	push dword [%1] 	
+    45                              <1> 	call [ReadFile] 			
+    46                              <1> %endmacro
+     3                                  
+     4                                  SEGMENT .DATA use32
+     5 00000000 4C4F57455243415345-     Title   	db "LOWERCASE AND REVERSED TEXT",0
+     5 00000009 20414E442052455645-
+     5 00000012 525345442054455854-
+     5 0000001B 00                 
+     6                                  
+     7 0000001C 0D0A0D0A5752495445-     msg1 		db 13,10,13,10,"WRITE TEXT (Enter to quit): ",0
+     7 00000025 20544558542028456E-
+     7 0000002E 74657220746F207175-
+     7 00000037 6974293A2000       
+     8 0000003D 21000000                msg1_len 	dd $-msg1
+     9 00000041 0D0A594F5552205445-     msg2 		db 13,10,"YOUR TEXT                   : ",0
+     9 0000004A 585420202020202020-
+     9 00000053 202020202020202020-
+     9 0000005C 2020203A2000       
+    10 00000062 21000000                msg2_len 	dd $-msg2
+    11 00000066 0D0A434F4E56455254-     msg3 		db 13,10,"CONVERTED TEXT              : ",0
+    11 0000006F 454420544558542020-
+    11 00000078 202020202020202020-
+    11 00000081 2020203A2000       
+    12 00000087 21000000                msg3_len 	dd $-msg3
+    13 0000008B 0D0A52455645525345-     msg4		db 13,10,"REVERSED TEXT               : ",0
+    13 00000094 442054455854202020-
+    13 0000009D 202020202020202020-
+    13 000000A6 2020203A2000       
+    14 000000AC 21000000                msg4_len	dd $-msg4
+    15                                  
+    16                                  
+    17 000000B0 <res 000000FF>          buff		resb 255
+    18 000001AF FF000000                buff_len	dd 255
+    19                                  
+    20 000001B3 <res 000000FF>          buffC		resb 255
+    21 000002B2 FF000000                buffC_len	dd 255
+    22                                  
+    23 000002B6 <res 000000FF>          buffR		resb 255
+    24 000003B5 FF000000                buffR_len	dd 255
+    25                                  
+    26                                  
+    27                                  SEGMENT .BSS  use32
+    28 00000000 <res 00000004>          hStdOut		resd 1
+    29 00000004 <res 00000004>          hStdIn		resd 1
+    30 00000008 <res 00000004>          nBytes		resd 1
+    31 0000000C <res 00000004>          iBytes		resd 1
+    32                                  
+    33                                  SEGMENT .CODE use32
+    34                                  ..start:
+    35                                  
+    36                                  NewConsole 	Title, hStdOut, hStdIn
+    36                              <1> 
+    36 00000000 FF15[00000000]      <1>  call [AllocConsole]
+    36                              <1> 
+    36 00000006 68[00000000]        <1>  push dword %1
+    36 0000000B FF15[00000000]      <1>  call [SetConsoleTitleA]
+    36                              <1> 
+    36 00000011 6AF5                <1>  push dword -11
+    36 00000013 FF15[00000000]      <1>  call [GetStdHandle]
+    36 00000019 A3[00000000]        <1>  mov dword [%2], eax
+    36                              <1> 
+    36 0000001E 6AF6                <1>  push dword -10
+    36 00000020 FF15[00000000]      <1>  call [GetStdHandle]
+    36 00000026 A3[04000000]        <1>  mov dword [%3], eax
+    36                              <1> 
+    37                                  
+    38                                  Again:
+    39                                  DisplayText	hStdOut, msg1, msg1_len, nBytes
+    39 0000002B 6A00                <1>  push dword 0
+    39 0000002D 68[08000000]        <1>  push dword %4
+    39 00000032 FF35[3D000000]      <1>  push dword [%3]
+    39 00000038 68[1C000000]        <1>  push dword %2
+    39 0000003D FF35[00000000]      <1>  push dword [%1]
+    39 00000043 FF15[00000000]      <1>  call [WriteFile]
+    40                                  GetText		hStdIn, buff, buff_len, iBytes
+    40 00000049 6A00                <1>  push dword 0
+    40 0000004B 68[0C000000]        <1>  push dword %4
+    40 00000050 FF35[AF010000]      <1>  push dword [%3]
+    40 00000056 68[B0000000]        <1>  push dword %2
+    40 0000005B FF35[04000000]      <1>  push dword [%1]
+    40 00000061 FF15[00000000]      <1>  call [ReadFile]
+    41                                  
+    42 00000067 833D[0C000000]02        CMP dword [iBytes],2
+    43 0000006E 0F84C3000000            JE  Exitloop
+    44                                  
+    45                                  DisplayText	hStdOut, msg2, msg2_len, nBytes
+    45 00000074 6A00                <1>  push dword 0
+    45 00000076 68[08000000]        <1>  push dword %4
+    45 0000007B FF35[62000000]      <1>  push dword [%3]
+    45 00000081 68[41000000]        <1>  push dword %2
+    45 00000086 FF35[00000000]      <1>  push dword [%1]
+    45 0000008C FF15[00000000]      <1>  call [WriteFile]
+    46                                  DisplayText	hStdOut, buff, iBytes, nBytes
+    46 00000092 6A00                <1>  push dword 0
+    46 00000094 68[08000000]        <1>  push dword %4
+    46 00000099 FF35[0C000000]      <1>  push dword [%3]
+    46 0000009F 68[B0000000]        <1>  push dword %2
+    46 000000A4 FF35[00000000]      <1>  push dword [%1]
+    46 000000AA FF15[00000000]      <1>  call [WriteFile]
+    47                                  
+    48 000000B0 E892000000              CALL LowtoUpp
+    49                                  
+    50                                  DisplayText	hStdOut, msg3, msg3_len, nBytes
+    50 000000B5 6A00                <1>  push dword 0
+    50 000000B7 68[08000000]        <1>  push dword %4
+    50 000000BC FF35[87000000]      <1>  push dword [%3]
+    50 000000C2 68[66000000]        <1>  push dword %2
+    50 000000C7 FF35[00000000]      <1>  push dword [%1]
+    50 000000CD FF15[00000000]      <1>  call [WriteFile]
+    51                                  DisplayText	hStdOut, buffC, iBytes, nBytes		; Uppercased
+    51 000000D3 6A00                <1>  push dword 0
+    51 000000D5 68[08000000]        <1>  push dword %4
+    51 000000DA FF35[0C000000]      <1>  push dword [%3]
+    51 000000E0 68[B3010000]        <1>  push dword %2
+    51 000000E5 FF35[00000000]      <1>  push dword [%1]
+    51 000000EB FF15[00000000]      <1>  call [WriteFile]
+    52                                  
+    53 000000F1 E87D000000              CALL Reverse
+    54                                  
+    55                                  DisplayText	hStdOut, msg4, msg4_len, nBytes
+    55 000000F6 6A00                <1>  push dword 0
+    55 000000F8 68[08000000]        <1>  push dword %4
+    55 000000FD FF35[AC000000]      <1>  push dword [%3]
+    55 00000103 68[8B000000]        <1>  push dword %2
+    55 00000108 FF35[00000000]      <1>  push dword [%1]
+    55 0000010E FF15[00000000]      <1>  call [WriteFile]
+    56                                  DisplayText	hStdOut, buffR, iBytes, nBytes	; Reversed
+    56 00000114 6A00                <1>  push dword 0
+    56 00000116 68[08000000]        <1>  push dword %4
+    56 0000011B FF35[0C000000]      <1>  push dword [%3]
+    56 00000121 68[B6020000]        <1>  push dword %2
+    56 00000126 FF35[00000000]      <1>  push dword [%1]
+    56 0000012C FF15[00000000]      <1>  call [WriteFile]
+    57                                  
+    58 00000132 E9F4FEFFFF              JMP Again
+    59                                  
+    60                                  Exitloop:
+    61                                     QuitConsole
+    61 00000137 FF15[00000000]      <1>  call [FreeConsole]
+    61 0000013D 31C0                <1>  xor eax, eax
+    61 0000013F 50                  <1>  push eax
+    61 00000140 FF15[00000000]      <1>  call [ExitProcess]
+    62                                  
+    63 00000146 C3                      RET
+    64                                  
+    65                                  ; CONVERT Lowercase to Uppercase
+    66                                  ;-------------------------------------------------------------------------------------
+    67                                  LowtoUpp:
+    68 00000147 8B0D[0C000000]             mov ecx, [iBytes]
+    69 0000014D BB[B0000000]               mov ebx, dword buff
+    70 00000152 BF[B3010000]               mov edi, buffC
+    71 00000157 4B                         dec ebx                          ; adjust count to offset
+    72 00000158 4F                         dec edi							; same	
+    73                                  
+    74                                  	Testlow:
+    75 00000159 8A040B                  		mov al,byte[ebx+ecx]
+    76 0000015C 88040F                  		mov byte[edi+ecx],al
+    77 0000015F 803C0F61                		cmp byte[edi+ecx],0x61		; ebx+ecx below 'a'
+    78 00000163 720A                    		jb Decrement
+    79 00000165 803C0F7A                		cmp byte[edi+ecx],0x7A		; ebx+ecx above 'z'
+    80 00000169 7704                    		ja Decrement
+    81 0000016B 802C0F20                		sub byte[edi+ecx],0x20 			; uppercased
+    82                                  
+    83                                  	Decrement:
+    84 0000016F 49                      		dec ecx                     ; next character for source
+    85 00000170 75E7                    		jnz Testlow
+    86                                  
+    87 00000172 C3                      ret
+    88                                  
+    89                                  ; REVERSE text
+    90                                  ;-------------------------------------------------------------------------------------
+    91                                  Reverse:
+    92 00000173 BB[B0000000]            	mov ebx, dword buff
+    93 00000178 BF[B6020000]            	mov edi, dword buffR
+    94 0000017D 8B0D[0C000000]          	mov ecx, [iBytes]
+    95 00000183 01CB                    	add ebx, ecx
+    96 00000185 83EB03                  	sub ebx,3
+    97                                  
+    98                                  
+    99                                  	loop:
+   100 00000188 8A03                    		mov al, byte[ebx]
+   101 0000018A 8807                    		mov [edi], al
+   102 0000018C 4B                      		dec ebx
+   103 0000018D 47                      		inc edi
+   104 0000018E E2F8                    		loop loop
+   105                                  
+   106 00000190 C3                      ret
+   107                                  

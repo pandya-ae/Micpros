@@ -1,0 +1,22 @@
+     1                                  segment data 
+     2 00000000 68656C6C6F2C20776F-     Hello:  DB      "hello, world", 13, 10, "$"
+     2 00000009 726C640D0A24       
+     3                                  
+     4                                  segment stack stack 
+     5 00000000 <res 00000040>                  resb 64
+     6                                  stacktop:
+     7                                  
+     8                                  segment code 
+     9                                  ..start:
+    10 00000000 B8[0000]                        mov     ax,data
+    11 00000003 8ED8                            mov     ds,ax
+    12 00000005 B8[0000]                        mov     ax,stack
+    13 00000008 8ED0                            mov     ss,ax
+    14 0000000A BC[4000]                        mov     sp,stacktop
+    15                                  		
+    16 0000000D BA[0000]                		mov     dx,Hello
+    17 00000010 B409                            mov     ah,9
+    18 00000012 CD21                            int     0x21
+    19                                  		
+    20 00000014 B8004C                  		mov     ax,0x4c00
+    21 00000017 CD21                            int     0x21

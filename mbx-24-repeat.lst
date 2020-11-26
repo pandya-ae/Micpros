@@ -1,0 +1,29 @@
+     1                                  IMPORT MessageBoxA user32.dll
+     2                                  IMPORT ExitProcess kernel32.dll
+     3                                  EXTERN MessageBoxA	
+     4                                  EXTERN ExitProcess	
+     5                                  
+     6                                  segment .code use32
+     7                                  ..start:	
+     8                                  
+     9 00000000 6A24                     push dword 24h			; Button Yes/No | Icon Question
+    10 00000002 68[0E000000]             push dword title1		
+    11 00000007 68[00000000]             push dword string1     
+    12 0000000C 6A00                     push dword 0
+    13 0000000E FF15[00000000]           call [MessageBoxA]
+    14                                   
+    15 00000014 83F806                   CMP EAX, 6
+    16 00000017 74E7                     JE  ..start
+    17                                  
+    18 00000019 6A00                     push dword 0
+    19 0000001B FF15[00000000]           call [ExitProcess]
+    20 00000021 C9                       leave
+    21 00000022 C3                      ret
+    22                                  
+    23                                  segment .data use32
+    24 00000000 446973706C61792041-     string1: db 'Display Again',0
+    24 00000009 6761696E00         
+    25                                           
+    26 0000000E 417373656D626C7920-     title1:  db 'Assembly MsgBox',0
+    26 00000017 4D7367426F7800     
+    27                                   
